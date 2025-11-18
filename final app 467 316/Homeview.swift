@@ -53,7 +53,7 @@ struct Homeview: View {
 
         ),
         Concert(
-            title: "The magical concert  ",
+            title: "The magical concert 55555  ",
             subtitle: "STAGE: A Night of Wonders",
             dateText: "20 Dec 2025",
             timeText: "19:00 – 22:00",
