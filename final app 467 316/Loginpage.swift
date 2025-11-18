@@ -37,24 +37,31 @@ class SignInViewModel: ObservableObject {
 }
 
 struct Loginpage: View {
+    @Binding var selectedTab: Int
+    @State private var email: String = ""
+    @State private var password: String = ""
+    @StateObject private var viewModel = SignInViewModel()
+    @Environment(\.dismiss) private var dismiss
+
     var body: some View {
         ZStack{
             Color.black
-            RoundedRectangle(cornerRadius: 30, style: .continuous)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .foregroundStyle(.linearGradient(colors: [.white, .white], startPoint: .topLeading, endPoint: .bottomLeading))
-                .frame(maxWidth: 300, maxHeight: 400)
+                .frame(maxWidth: 350, maxHeight: 420)
             VStack{
-                Text ("login with email")
+                Text ("Login with email")
                     .font(.largeTitle)
                     .fontWeight(.bold)
                 
-                TextField("email",text:$email)
+                TextField("email", text: $email)
                     .textFieldStyle(.roundedBorder)
-                    .autocapitalization(.none)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
                     .frame(width: 250)
                 SecureField("password", text: $password)
                     .textFieldStyle(.roundedBorder)
-                    .autocapitalization(.none)
+                    .textInputAutocapitalization(.never)
                     .frame(width: 250)
 
                 Button("Login"){
@@ -87,6 +94,7 @@ struct Loginpage: View {
 #Preview {
     // ถ้า Preview ไม่ได้อยู่ใน NavigationStack ให้ห่อเพื่อทดสอบ Navigation
     NavigationStack {
+        // Provide a constant binding for preview
         Loginpage(selectedTab: .constant(2))
     }
 }
