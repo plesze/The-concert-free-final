@@ -10,11 +10,29 @@ import Firebase
 @main
 struct final_app_467_316App: App {
     
+    init() {
+            FirebaseApp.configure()
+        }
     
     var body: some Scene {
         WindowGroup {
             ContentView()
             
         }
+    }
+}
+struct FirebaseLoginApp{
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate: AppDelegate
+    var body:some Scene{
+        WindowGroup{
+            ContentView()
+        }
+    }
+}
+class AppDelegate: NSObject,UIApplicationDelegate{
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey :Any]? = nil) -> Bool {
+        FirebaseApp.configure()
+        return true
     }
 }
