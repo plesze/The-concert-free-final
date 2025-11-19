@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State private var selectedTab: Int = 0
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -38,7 +40,7 @@ struct ContentView: View {
                         TicketView()
                     }
                     Tab(constants.profile, systemImage: constants.profileicon) {
-                        Text("Profile")
+                        ProflieView(selectedTab: $selectedTab)
                     }
                 }
             }
