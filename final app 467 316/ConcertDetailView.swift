@@ -1,16 +1,25 @@
 import SwiftUI
 import FirebaseAuth
+import FirebaseFirestore
+import CoreImage.CIFilterBuiltins
 
 struct ConcertDetailView: View {
-    let concert: Homeview.Concert
-    @State private var showSuccessAlert = false
-    @State private var navigateToLogin = false
-    @State private var showLoginAlert = false
-    @Environment(\.openURL) private var openURL
-    var body: some View {
+let concert: Homeview.Concert
+@State private var showSuccessAlert = false
+@State private var navigateToLogin = false
+@State private var showLoginAlert = false
+@State private var navigateToTicket = false
+@Environment(\.openURL) private var openURL
+
+// ข้อมูล ticket ที่สร้าง
+@State private var ticketQR: String = ""
+@State private var ticketDate: Date = Date()
+
+var body: some View {
+    NavigationStack {
         ZStack {
             Color.black.ignoresSafeArea()
-
+            
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     Image(concert.imageName)
@@ -18,16 +27,16 @@ struct ConcertDetailView: View {
                         .scaledToFill()
                         .frame(height: 500)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
-
+                    
                     Text(concert.title)
                         .font(.title2)
                         .fontWeight(.black)
                         .foregroundColor(.white)
-
+                    
                     Text(concert.subtitle)
                         .font(.subheadline)
                         .foregroundColor(.white.opacity(0.8))
-
+                    
                     HStack(spacing: 8) {
                         Image(systemName: "calendar")
                             .foregroundColor(.green)
@@ -35,7 +44,7 @@ struct ConcertDetailView: View {
                             .foregroundColor(.green)
                             .font(.subheadline)
                     }
-
+                    
                     HStack(spacing: 8) {
                         Image(systemName: "clock")
                             .foregroundColor(.green)
@@ -43,8 +52,7 @@ struct ConcertDetailView: View {
                             .foregroundColor(.white)
                             .font(.subheadline)
                     }
-
-                    // แถวสถานที่ + ปุ่มเปิดแผนที่
+                    
                     HStack(alignment: .center, spacing: 12) {
                         HStack(spacing: 8) {
                             Image(systemName: "mappin.and.ellipse")
@@ -53,9 +61,9 @@ struct ConcertDetailView: View {
                                 .foregroundColor(.blue)
                                 .font(.subheadline)
                         }
-
+                        
                         Spacer(minLength: 8)
-
+                        
                         Button {
                             if let url = concert.mapURL {
                                 openURL(url)
@@ -72,15 +80,15 @@ struct ConcertDetailView: View {
                         }
                         .buttonStyle(.plain)
                     }
-
+                    
                     Text(concert.detail)
                         .foregroundColor(.white)
-
+                    
                     Button {
                         if Auth.auth().currentUser == nil {
                             showLoginAlert = true
                         } else {
-                            showSuccessAlert = true
+                            registerTicket()
                         }
                     } label: {
                         Text("ลงทะเบียน")
@@ -92,38 +100,83 @@ struct ConcertDetailView: View {
                     }
                     .padding(.top, 8)
                     .shadow(color: .red.opacity(0.35), radius: 5, x: 0, y: 6)
-                    .accessibilityLabel("Register for concert")
                 }
                 .padding()
-                .navigationTitle("รายละเอียดคอนเสิร์ต")
-                .navigationBarTitleDisplayMode(.inline)
-                .alert("ลงทะเบียนเข้าร่วมสำเร็จ", isPresented: $showSuccessAlert) {
-                    Button("เข้าใจแล้ว", role: .cancel) { }
-                } message: {
-                    Text("แล้วเจอกันในงาน \(concert.title) !")
-                }
-                .alert("กรุณาเข้าสู่ระบบก่อนลงทะเบียน", isPresented: $showLoginAlert) {
-                    Button("เข้าสู่ระบบ") {
-                        navigateToLogin = true
-                    }
-                }
-                .navigationDestination(isPresented: $navigateToLogin) {
-                    Loginpage(selectedTab: .constant(2))
-                }
             }
         }
+        .navigationTitle("รายละเอียดคอนเสิร์ต")
+        .navigationBarTitleDisplayMode(.inline)
+        
+        // Alert สำหรับลงทะเบียนสำเร็จ
+        .alert("ลงทะเบียนเข้าร่วมสำเร็จ", isPresented: $showSuccessAlert) {
+            Button("เข้าใจแล้ว", role: .cancel) {
+                navigateToTicket = true
+            }
+        } message: {
+            Text("แล้วเจอกันในงาน \(concert.title) !")
+        }
+        
+        // Alert สำหรับ login
+        .alert("กรุณาเข้าสู่ระบบก่อนลงทะเบียน", isPresented: $showLoginAlert) {
+            Button("เข้าสู่ระบบ") {
+                navigateToLogin = true
+            }
+        }
+        
+        // NavigationDestination สำหรับ login
+        .navigationDestination(isPresented: $navigateToLogin) {
+            Loginpage(selectedTab: .constant(2))
+        }
+        
+        // NavigationDestination สำหรับ TicketDetailView
+        .navigationDestination(isPresented: $navigateToTicket) {
+            TicketDetailView(
+                concert: concert,
+                qrString: ticketQR,
+                registerDate: ticketDate
+            )
+        }
     }
+}
 
-    // fallback เมื่อไม่มี mapURL
-    private func mapsURL(for place: String) -> URL? {
-        let query = place.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        return URL(string: "http://maps.apple.com/?q=\(query)")
-    }
+// ฟังก์ชันเพิ่มตั๋วลง Firestore
+private func registerTicket() {
+    guard let user = Auth.auth().currentUser else { return }
+    let email = user.email ?? user.uid
+    
+    let db = Firestore.firestore()
+    let ticketRef = db.collection("tickets").document()
+    let ticketId = ticketRef.documentID
+    
+    ticketQR = "ticket:\(ticketId)|user:\(email)|concert:\(concert.id)"
+    ticketDate = Date()
+    
+    let ticketData: [String: Any] = [
+        "concertId": concert.id.uuidString,
+        "registerDate": Timestamp(date: ticketDate),
+        "userEmail": email,
+        "qrData": ticketQR
+    ]
+    
+    db.collection("tickets")
+        .addDocument(data: ticketData) { error in
+            if let error = error {
+                print("Error adding ticket: \(error.localizedDescription)")
+            } else {
+                showSuccessAlert = true
+            }
+        }
+}
+
+private func mapsURL(for place: String) -> URL? {
+    let query = place.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+    return URL(string: "http://maps.apple.com/?q=\(query)")
+}
+
 }
 
 #Preview {
-    NavigationStack {
-        ConcertDetailView(concert: Homeview.sampleConcerts.first!)
-    }
+NavigationStack {
+ConcertDetailView(concert: Homeview.sampleConcerts.first!)
 }
-
+}
