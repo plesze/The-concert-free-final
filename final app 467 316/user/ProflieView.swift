@@ -7,10 +7,16 @@
 
 import SwiftUI
 import FirebaseAuth
+import FirebaseFirestore
 
 struct ProflieView: View {
     @Binding var selectedTab: Int
     @State private var isLoggedIn: Bool = Auth.auth().currentUser != nil
+
+    @State private var username: String = ""
+    @State private var phone: String = ""
+    @State private var isLoadingProfile: Bool = false
+    @State private var profileError: String?
 
     var body: some View {
         ZStack {
@@ -18,7 +24,6 @@ struct ProflieView: View {
                 .ignoresSafeArea()
 
             if isLoggedIn {
-                // ผู้ใช้ล็อกอินแล้ว: แสดงหน้าโปรไฟล์จริงแทน (ตัวอย่าง)
                 VStack(spacing: 16) {
                     Text("PROFILE")
                         .foregroundColor(.white)
@@ -28,6 +33,27 @@ struct ProflieView: View {
                     if let email = Auth.auth().currentUser?.email {
                         Text(email)
                             .foregroundColor(.white.opacity(0.9))
+                    }
+
+                    if isLoadingProfile {
+                        ProgressView()
+                            .tint(.white)
+                    } else {
+                        // Show username and phone loaded from Firestore
+                        if !username.isEmpty {
+                            Text("Username: \(username)")
+                                .foregroundColor(.white)
+                        }
+                        if !phone.isEmpty {
+                            Text("Phone: \(phone)")
+                                .foregroundColor(.white)
+                        }
+                        if let profileError = profileError {
+                            Text(profileError)
+                                .foregroundColor(.red)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 16)
+                        }
                     }
 
                     Button(role: .destructive) {
@@ -48,11 +74,10 @@ struct ProflieView: View {
                 }
                 .padding(.horizontal, 24)
                 .onAppear {
-                    // อัปเดตสถานะทุกครั้งที่เข้าหน้านี้
                     isLoggedIn = Auth.auth().currentUser != nil
+                    fetchProfile()
                 }
             } else {
-                // ผู้ใช้ยังไม่ล็อกอิน: แสดงปุ่มไปหน้า Login
                 VStack(spacing: 16) {
                     Text("PLEASE LOGIN OR REGISTER ")
                         .foregroundColor(.white)
@@ -63,8 +88,10 @@ struct ProflieView: View {
                     NavigationLink {
                         Loginpage(selectedTab: $selectedTab)
                             .onReceive(NotificationCenter.default.publisher(for: .AuthStateDidChange)) { _ in
-                                // เผื่อมีการส่ง Notification หลัง login สำเร็จ
                                 isLoggedIn = Auth.auth().currentUser != nil
+                                if isLoggedIn {
+                                    fetchProfile()
+                                }
                             }
                     } label: {
                         Text("Log in")
@@ -91,11 +118,34 @@ struct ProflieView: View {
         }
     }
 
+    private func fetchProfile() {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        isLoadingProfile = true
+        profileError = nil
+
+        let db = Firestore.firestore()
+        db.collection("users").document(uid).getDocument { snapshot, error in
+            isLoadingProfile = false
+            if let error = error {
+                profileError = "Failed to load profile: \(error.localizedDescription)"
+                return
+            }
+            guard let data = snapshot?.data() else {
+                profileError = "Profile not found."
+                return
+            }
+            self.username = data["username"] as? String ?? ""
+            self.phone = data["phone"] as? String ?? ""
+        }
+    }
+
     private func signOut() {
         do {
             try Auth.auth().signOut()
             isLoggedIn = false
             selectedTab = 2 // อยู่แท็บโปรไฟล์เดิม
+            username = ""
+            phone = ""
         } catch {
             // จัดการ error ถ้าต้องการ
         }

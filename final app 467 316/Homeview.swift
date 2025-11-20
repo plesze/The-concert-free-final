@@ -47,7 +47,7 @@ struct Homeview: View {
         Concert(
             title: "SIAM MUSIC FEST 2025",
             subtitle: "STAGE: Before the End of Summer",
-            dateText: "12 Dec 2025",
+            dateText: "13-14 Dec 2025",
             timeText: "17:00 – 23:00",
             locationText: "Siam Square",
             imageName: "siammusic",
