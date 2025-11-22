@@ -6,21 +6,49 @@
 //
 
 import SwiftUI
-import FirebaseAuth
 import Combine
+import FirebaseAuth
+import FirebaseFirestore
 
 class SignInViewModel: ObservableObject {
-    @Published var user: User?
+    @Published var user: FirebaseAuth.User?
     @Published var errorMessage: String?
 
-    func signIn(email: String, password: String) {
-        Auth.auth().signIn(withEmail: email, password: password) { [weak self] result, error in
-            if error != nil {
-                self?.errorMessage =
-                     "email or password is incorrect"
-                return
+    func signIn(identifier: String, password: String) {
+        // ถ้าเป็น email, sign in ได้เลย
+        if identifier.contains("@") {
+            Auth.auth().signIn(withEmail: identifier, password: password) { [weak self] result, error in
+                if let _ = error {
+                    self?.errorMessage = "Email or password is incorrect"
+                    return
+                }
+                self?.user = result?.user
             }
-            self?.user = result?.user
+        } else {
+            // identifier เป็น username -> หา email ก่อน
+            let db = Firestore.firestore()
+            db.collection("users")
+                .whereField("username", isEqualTo: identifier)
+                .getDocuments { [weak self] snapshot, error in
+                    if let _ = error {
+                        self?.errorMessage = "Username not found"
+                        return
+                    }
+                    
+                    guard let email = snapshot?.documents.first?.data()["email"] as? String else {
+                        self?.errorMessage = "Username not found"
+                        return
+                    }
+                    
+                    // ใช้ email sign in
+                    Auth.auth().signIn(withEmail: email, password: password) { result, error in
+                        if let _ = error {
+                            self?.errorMessage = "Password is incorrect"
+                            return
+                        }
+                        self?.user = result?.user
+                    }
+                }
         }
     }
     
@@ -50,11 +78,11 @@ struct Loginpage: View {
                 .foregroundStyle(.linearGradient(colors: [.white, .white], startPoint: .topLeading, endPoint: .bottomLeading))
                 .frame(maxWidth: 350, maxHeight: 420)
             VStack{
-                Text ("Login with email")
-                    .font(.largeTitle)
+                Text ("Login to join us")
+                    .font(.title)
                     .fontWeight(.bold)
                 
-                TextField("email", text: $email)
+                TextField("email / username", text: $email)
                     .textFieldStyle(.roundedBorder)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
@@ -65,7 +93,7 @@ struct Loginpage: View {
                     .frame(width: 250)
 
                 Button("Login"){
-                    viewModel.signIn(email: email, password: password)
+                    viewModel.signIn(identifier: email, password: password)
                 }
                 .buttonStyle(.borderedProminent)
                 
