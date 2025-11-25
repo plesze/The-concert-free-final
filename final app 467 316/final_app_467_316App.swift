@@ -7,6 +7,8 @@
 
 import SwiftUI
 import Firebase
+import FirebaseFirestore
+import FirebaseAuth
 @main
 struct final_app_467_316App: App {
     

@@ -23,7 +23,17 @@ struct TicketDetailView: View {
 
     // MARK: - Init with default values for Preview
     init(
-        concert: Homeview.Concert = Homeview.sampleConcerts.first!,
+        concert: Homeview.Concert = Homeview.Concert(
+            id: "sample-id",
+            title: "Sample Concert",
+            subtitle: "Live in Bangkok",
+            date: "2025-12-31",
+            time: "20:00",
+            location: "Sample Arena",
+            imageURL: "https://example.com/sample.jpg",
+            detail: "This is a sample concert used for previews.",
+            mapURL: "http://maps.apple.com/?q=Sample%20Arena"
+        ),
         qrString: String = "ticket:previewTicket|user:preview@example.com|concert:sample",
         registerDate: Date = Date()
     ) {
@@ -37,12 +47,9 @@ struct TicketDetailView: View {
         ZStack {
             Color(UIColor.systemGroupedBackground).ignoresSafeArea()
 
-            // เนื้อหาหลัก: การ์ดใบเดียว ไม่ต้องเลื่อน
             ticketCardView
                 .padding(.horizontal)
-                // .padding(.top, 1)
         }
-        // ปุ่มลอยอยู่ด้านล่างแบบ system-safe
         .safeAreaInset(edge: .bottom) {
             saveButton
                 .padding(.horizontal, 20)
@@ -69,7 +76,7 @@ struct TicketDetailView: View {
                             .font(.title2.bold())
                             .foregroundColor(.black)
 
-                        Text(concert.locationText)
+                        Text(concert.location)
                             .font(.subheadline)
                             .foregroundColor(.gray)
                     }
@@ -93,7 +100,7 @@ struct TicketDetailView: View {
                             Text("Event Time:")
                                 .foregroundColor(.gray)
                             Spacer()
-                            Text("\(concert.dateText) • \(concert.timeText)")
+                            Text("\(concert.date) • \(concert.time)")
                                 .bold()
                         }
 
@@ -101,7 +108,7 @@ struct TicketDetailView: View {
                             Text("Location:")
                                 .foregroundColor(.gray)
                             Spacer()
-                            Text(concert.locationText)
+                            Text(concert.location)
                                 .bold()
                         }
 

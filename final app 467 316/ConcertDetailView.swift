@@ -22,11 +22,31 @@ var body: some View {
             
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Image(concert.imageName)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(height: 500)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                    // Load remote image from URL string
+                    AsyncImage(url: URL(string: concert.imageURL)) { phase in
+                        switch phase {
+                        case .empty:
+                            ZStack {
+                                Color.gray.opacity(0.2)
+                                ProgressView()
+                                    .tint(.white)
+                            }
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFill()
+                        case .failure:
+                            ZStack {
+                                Color.gray.opacity(0.2)
+                                Image(systemName: "photo")
+                                    .foregroundColor(.white)
+                            }
+                        @unknown default:
+                            Color.gray.opacity(0.2)
+                        }
+                    }
+                    .frame(height: 500)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
                     
                     Text(concert.title)
                         .font(.title2)
@@ -40,7 +60,7 @@ var body: some View {
                     HStack(spacing: 8) {
                         Image(systemName: "calendar")
                             .foregroundColor(.green)
-                        Text(concert.dateText)
+                        Text(concert.date)
                             .foregroundColor(.green)
                             .font(.subheadline)
                     }
@@ -48,7 +68,7 @@ var body: some View {
                     HStack(spacing: 8) {
                         Image(systemName: "clock")
                             .foregroundColor(.green)
-                        Text(concert.timeText)
+                        Text(concert.time)
                             .foregroundColor(.white)
                             .font(.subheadline)
                     }
@@ -57,7 +77,7 @@ var body: some View {
                         HStack(spacing: 8) {
                             Image(systemName: "mappin.and.ellipse")
                                 .foregroundColor(.blue)
-                            Text(concert.locationText)
+                            Text(concert.location)
                                 .foregroundColor(.blue)
                                 .font(.subheadline)
                         }
@@ -65,9 +85,9 @@ var body: some View {
                         Spacer(minLength: 8)
                         
                         Button {
-                            if let url = concert.mapURL {
+                            if let url = URL(string: concert.mapURL) {
                                 openURL(url)
-                            } else if let url = mapsURL(for: concert.locationText) {
+                            } else if let url = mapsURL(for: concert.location) {
                                 openURL(url)
                             }
                         } label: {
@@ -85,9 +105,12 @@ var body: some View {
                         .foregroundColor(.white)
                     
                     Button {
+                        print("Register button tapped")
                         if Auth.auth().currentUser == nil {
+                            print("No current user -> showLoginAlert")
                             showLoginAlert = true
                         } else {
+                            print("User exists -> call registerTicket()")
                             registerTicket()
                         }
                     } label: {
@@ -110,6 +133,7 @@ var body: some View {
         // Alert สำหรับลงทะเบียนสำเร็จ
         .alert("ลงทะเบียนเข้าร่วมสำเร็จ", isPresented: $showSuccessAlert) {
             Button("เข้าใจแล้ว", role: .cancel) {
+                print("Success alert dismissed -> navigate to Ticket")
                 navigateToTicket = true
             }
         } message: {
@@ -119,6 +143,7 @@ var body: some View {
         // Alert สำหรับ login
         .alert("กรุณาเข้าสู่ระบบก่อนลงทะเบียน", isPresented: $showLoginAlert) {
             Button("เข้าสู่ระบบ") {
+                print("Go to Login tapped")
                 navigateToLogin = true
             }
         }
@@ -130,7 +155,8 @@ var body: some View {
         
         // NavigationDestination สำหรับ TicketDetailView
         .navigationDestination(isPresented: $navigateToTicket) {
-            TicketDetailView(
+            print("Navigate to TicketDetailView with qrString=\(ticketQR)")
+            return TicketDetailView(
                 concert: concert,
                 qrString: ticketQR,
                 registerDate: ticketDate
@@ -141,28 +167,37 @@ var body: some View {
 
 // ฟังก์ชันเพิ่มตั๋วลง Firestore
 private func registerTicket() {
-    guard let user = Auth.auth().currentUser else { return }
+    print("registerTicket() called")
+    guard let user = Auth.auth().currentUser else {
+        print("No user in registerTicket()")
+        return
+    }
     let email = user.email ?? user.uid
+    print("Using email/uid: \(email)")
     
     let db = Firestore.firestore()
     let ticketRef = db.collection("tickets").document()
     let ticketId = ticketRef.documentID
     
+    // concert.id is String, use it directly
     ticketQR = "ticket:\(ticketId)|user:\(email)|concert:\(concert.id)"
     ticketDate = Date()
+    print("Prepared data, qr=\(ticketQR)")
     
     let ticketData: [String: Any] = [
-        "concertId": concert.id.uuidString,
+        "concertId": concert.id,
         "registerDate": Timestamp(date: ticketDate),
         "userEmail": email,
         "qrData": ticketQR
     ]
     
+    print("Writing ticket to Firestore...")
     db.collection("tickets")
         .addDocument(data: ticketData) { error in
             if let error = error {
                 print("Error adding ticket: \(error.localizedDescription)")
             } else {
+                print("Ticket added successfully -> showSuccessAlert = true")
                 showSuccessAlert = true
             }
         }
@@ -177,6 +212,18 @@ private func mapsURL(for place: String) -> URL? {
 
 #Preview {
 NavigationStack {
-ConcertDetailView(concert: Homeview.sampleConcerts.first!)
+    let sample = Homeview.Concert(
+        id: "sample-id",
+        title: "Sample Concert",
+        subtitle: "Live in Bangkok",
+        date: "2025-12-31",
+        time: "20:00",
+        location: "Sample Arena",
+        imageURL: "https://picsum.photos/800/600",
+        detail: "This is a sample concert used for previews.",
+        mapURL: "http://maps.apple.com/?q=Sample%20Arena"
+    )
+    ConcertDetailView(concert: sample)
+    //ข้อมูบจำลองอเพื่อให้ swiftui preveiw ทำงานได้
 }
 }
