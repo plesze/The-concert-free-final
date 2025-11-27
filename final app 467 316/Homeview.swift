@@ -30,15 +30,15 @@ struct Homeview: View {
     
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            Color(.systemBackground).ignoresSafeArea()
             
             Group {
                 if viewModel.isLoading {
                     VStack {
                         ProgressView()
-                            .tint(.white)
+                            .tint(.primary)
                         Text("กำลังโหลดคอนเสิร์ต...")
-                            .foregroundColor(.white.opacity(0.8))
+                            .foregroundColor(.secondary)
                             .padding(.top, 8)
                     }
                 } else if let error = viewModel.lastError {
@@ -47,10 +47,10 @@ struct Homeview: View {
                             .foregroundColor(.yellow)
                             .font(.system(size: 36, weight: .bold))
                         Text("โหลดข้อมูลไม่สำเร็จ")
-                            .foregroundColor(.white)
+                            .foregroundColor(.primary)
                             .font(.headline)
                         Text(error)
-                            .foregroundColor(.white.opacity(0.8))
+                            .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 24)
                         Button {
@@ -59,23 +59,23 @@ struct Homeview: View {
                             Label("ลองใหม่", systemImage: "arrow.clockwise")
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 8)
-                                .background(Capsule().fill(Color.white.opacity(0.15)))
+                                .background(Capsule().fill(Color.primary.opacity(0.15)))
                         }
                         .buttonStyle(.plain)
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                         .padding(.top, 4)
                     }
                     .padding()
                 } else if viewModel.concerts.isEmpty {
                     VStack(spacing: 12) {
                         Image(systemName: "music.quarternote.3")
-                            .foregroundColor(.white)
+                            .foregroundColor(.secondary)
                             .font(.system(size: 36, weight: .bold))
                         Text("ยังไม่มีคอนเสิร์ต")
-                            .foregroundColor(.white)
+                            .foregroundColor(.primary)
                             .font(.headline)
                         Text("โปรดกลับมาใหม่ภายหลัง")
-                            .foregroundColor(.white.opacity(0.8))
+                            .foregroundColor(.secondary)
                     }
                 } else {
                     content(concerts: viewModel.concerts)
@@ -105,7 +105,7 @@ struct Homeview: View {
                                 ZStack {
                                     Color.gray.opacity(0.2)
                                     ProgressView()
-                                        .tint(.white)
+                                        .tint(.primary)
                                 }
                             case .success(let image):
                                 image
@@ -115,7 +115,7 @@ struct Homeview: View {
                                 ZStack {
                                     Color.gray.opacity(0.2)
                                     Image(systemName: "photo")
-                                        .foregroundColor(.white)
+                                        .foregroundColor(.secondary)
                                 }
                             @unknown default:
                                 Color.gray.opacity(0.2)
@@ -136,14 +136,14 @@ struct Homeview: View {
                                     Text(concert.title)
                                         .font(.headline)
                                         .fontWeight(.bold)
-                                        .foregroundColor(.white)
+                                        .foregroundColor(.primary)
                                         .lineLimit(2)
                                         .truncationMode(.tail)
                                         .multilineTextAlignment(.leading)
                                     
                                     Text(concert.subtitle)
                                         .font(.subheadline)
-                                        .foregroundColor(.white.opacity(0.8))
+                                        .foregroundColor(.secondary)
                                         .lineLimit(1)
                                         .truncationMode(.tail)
                                 }
@@ -162,7 +162,7 @@ struct Homeview: View {
                                     Image(systemName: "clock")
                                         .foregroundColor(.green)
                                     Text(concert.time)
-                                        .foregroundColor(.white)
+                                        .foregroundColor(.primary)
                                         .font(.subheadline)
                                         .lineLimit(1)
                                         .truncationMode(.tail)
@@ -182,9 +182,9 @@ struct Homeview: View {
                             .frame(width: 280, height: 170)
                             .background(
                                 RoundedRectangle(cornerRadius: 1)
-                                    .fill(Color.gray.opacity(0.5))
+                                    .fill(Color(.secondarySystemBackground))
                             )
-                            .shadow(color: .black.opacity(0.5), radius: 12, x: 0, y: 8)
+                            .shadow(color: Color.black.opacity(0.2), radius: 12, x: 0, y: 8)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
@@ -207,8 +207,8 @@ struct Homeview: View {
                         )
                         .foregroundStyle(
                             currentIndex == index
-                            ? Color.white
-                            : Color.white.opacity(0.4)
+                            ? Color.primary
+                            : Color.primary.opacity(0.4)
                         )
                         .animation(.spring(duration: 0.2), value: currentIndex)
                 }

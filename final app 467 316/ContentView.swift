@@ -19,17 +19,16 @@ struct ContentView: View {
                     Text("The Concert Free")
                         .font(.title2)
                         .fontWeight(.bold)
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
 
                     Spacer()
                 }
                 .padding(.horizontal)
                 .padding(.top, 10)
                 .padding(.bottom, 8)
-                .background(Color.black)
+                .background(Color(.systemBackground))
                 
                 Divider()
-                    .background(Color.white.opacity(10))
                 
                 // ===== TAB BAR + VIEWS =====
                 TabView {
@@ -44,7 +43,7 @@ struct ContentView: View {
                     }
                 }
             }
-            .background(Color.black)
+            .background(Color(.systemBackground))
         }
     }
 }

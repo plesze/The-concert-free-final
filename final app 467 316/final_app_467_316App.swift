@@ -18,8 +18,9 @@ struct final_app_467_316App: App {
     
     var body: some Scene {
         WindowGroup {
-            ContentView()
-            
+            ThemeColor{
+                ContentView()
+            }
         }
     }
 }

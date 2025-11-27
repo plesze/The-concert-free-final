@@ -18,7 +18,7 @@ let concert: Homeview.Concert
 var body: some View {
     NavigationStack {
         ZStack {
-            Color.black.ignoresSafeArea()
+            Color(.systemBackground).ignoresSafeArea()
             
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
@@ -29,7 +29,7 @@ var body: some View {
                             ZStack {
                                 Color.gray.opacity(0.2)
                                 ProgressView()
-                                    .tint(.white)
+                                    .tint(.primary)
                             }
                         case .success(let image):
                             image
@@ -39,7 +39,7 @@ var body: some View {
                             ZStack {
                                 Color.gray.opacity(0.2)
                                 Image(systemName: "photo")
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.secondary)
                             }
                         @unknown default:
                             Color.gray.opacity(0.2)
@@ -51,11 +51,11 @@ var body: some View {
                     Text(concert.title)
                         .font(.title2)
                         .fontWeight(.black)
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                     
                     Text(concert.subtitle)
                         .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.8))
+                        .foregroundColor(.secondary)
                     
                     HStack(spacing: 8) {
                         Image(systemName: "calendar")
@@ -69,7 +69,7 @@ var body: some View {
                         Image(systemName: "clock")
                             .foregroundColor(.green)
                         Text(concert.time)
-                            .foregroundColor(.white)
+                            .foregroundColor(.primary)
                             .font(.subheadline)
                     }
                     
@@ -102,15 +102,12 @@ var body: some View {
                     }
                     
                     Text(concert.detail)
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                     
                     Button {
-                        print("Register button tapped")
                         if Auth.auth().currentUser == nil {
-                            print("No current user -> showLoginAlert")
                             showLoginAlert = true
                         } else {
-                            print("User exists -> call registerTicket()")
                             registerTicket()
                         }
                     } label: {
@@ -133,7 +130,6 @@ var body: some View {
         // Alert สำหรับลงทะเบียนสำเร็จ
         .alert("ลงทะเบียนเข้าร่วมสำเร็จ", isPresented: $showSuccessAlert) {
             Button("เข้าใจแล้ว", role: .cancel) {
-                print("Success alert dismissed -> navigate to Ticket")
                 navigateToTicket = true
             }
         } message: {
@@ -143,7 +139,6 @@ var body: some View {
         // Alert สำหรับ login
         .alert("กรุณาเข้าสู่ระบบก่อนลงทะเบียน", isPresented: $showLoginAlert) {
             Button("เข้าสู่ระบบ") {
-                print("Go to Login tapped")
                 navigateToLogin = true
             }
         }
@@ -155,8 +150,7 @@ var body: some View {
         
         // NavigationDestination สำหรับ TicketDetailView
         .navigationDestination(isPresented: $navigateToTicket) {
-            print("Navigate to TicketDetailView with qrString=\(ticketQR)")
-            return TicketDetailView(
+            TicketDetailView(
                 concert: concert,
                 qrString: ticketQR,
                 registerDate: ticketDate
@@ -167,22 +161,17 @@ var body: some View {
 
 // ฟังก์ชันเพิ่มตั๋วลง Firestore
 private func registerTicket() {
-    print("registerTicket() called")
     guard let user = Auth.auth().currentUser else {
-        print("No user in registerTicket()")
         return
     }
     let email = user.email ?? user.uid
-    print("Using email/uid: \(email)")
     
     let db = Firestore.firestore()
     let ticketRef = db.collection("tickets").document()
     let ticketId = ticketRef.documentID
     
-    // concert.id is String, use it directly
     ticketQR = "ticket:\(ticketId)|user:\(email)|concert:\(concert.id)"
     ticketDate = Date()
-    print("Prepared data, qr=\(ticketQR)")
     
     let ticketData: [String: Any] = [
         "concertId": concert.id,
@@ -191,13 +180,9 @@ private func registerTicket() {
         "qrData": ticketQR
     ]
     
-    print("Writing ticket to Firestore...")
     db.collection("tickets")
         .addDocument(data: ticketData) { error in
-            if let error = error {
-                print("Error adding ticket: \(error.localizedDescription)")
-            } else {
-                print("Ticket added successfully -> showSuccessAlert = true")
+            if error == nil {
                 showSuccessAlert = true
             }
         }
@@ -224,6 +209,5 @@ NavigationStack {
         mapURL: "http://maps.apple.com/?q=Sample%20Arena"
     )
     ConcertDetailView(concert: sample)
-    //ข้อมูบจำลองอเพื่อให้ swiftui preveiw ทำงานได้
 }
 }
