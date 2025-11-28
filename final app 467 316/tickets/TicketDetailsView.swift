@@ -45,7 +45,7 @@ struct TicketDetailView: View {
     // MARK: - Body
     var body: some View {
         ZStack {
-            Color(UIColor.systemGroupedBackground).ignoresSafeArea()
+            Color(.systemGroupedBackground).ignoresSafeArea()
 
             ticketCardView
                 .padding(.horizontal)
@@ -65,7 +65,7 @@ struct TicketDetailView: View {
     // MARK: - Ticket Card View
     var ticketCardView: some View {
         RoundedRectangle(cornerRadius: 24)
-            .fill(Color.white)
+            .fill(Color(.systemBackground))
             .shadow(radius: 4)
             .overlay(
                 VStack(spacing: 16) {
@@ -74,11 +74,11 @@ struct TicketDetailView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(concert.title)
                             .font(.title2.bold())
-                            .foregroundColor(.black)
+                            .foregroundStyle(.primary)
 
                         Text(concert.location)
                             .font(.subheadline)
-                            .foregroundColor(.gray)
+                            .foregroundStyle(.secondary)
                     }
 
                     Divider()
@@ -98,18 +98,20 @@ struct TicketDetailView: View {
 
                         HStack {
                             Text("Event Time:")
-                                .foregroundColor(.gray)
+                                .foregroundStyle(.secondary)
                             Spacer()
                             Text("\(concert.date) • \(concert.time)")
                                 .bold()
+                                .foregroundStyle(.primary)
                         }
 
                         HStack {
                             Text("Location:")
-                                .foregroundColor(.gray)
+                                .foregroundStyle(.secondary)
                             Spacer()
                             Text(concert.location)
                                 .bold()
+                                .foregroundStyle(.primary)
                         }
 
                     }
@@ -126,18 +128,12 @@ struct TicketDetailView: View {
         Button {
             saveTicketAsImage()
         } label: {
-            HStack {
-                Image(systemName: "square.and.arrow.down")
-                Text("Save as image")
-            }
-            .padding()
-            .frame(maxWidth: .infinity)
-            .background(Color.blue)
-            .foregroundColor(.white)
-            .cornerRadius(12)
-            .shadow(radius: 4)
+            Label("Save as image", systemImage: "square.and.arrow.down")
+                .frame(maxWidth: .infinity)
         }
-        .padding(.bottom, 8) // ระยะห่างจากขอบล่างภายใน safe area inset
+        .buttonStyle(.borderedProminent) // ใช้ accent/tint ของระบบอัตโนมัติ
+        .tint(.accentColor)              // ให้ตามธีม/Accent ที่ผู้ใช้เลือก
+        .padding(.bottom, 8)
     }
 
     // MARK: - QR Code Generator
