@@ -72,45 +72,59 @@ struct Loginpage: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        ZStack{
-            Color.black
+        ZStack {
+            // ใช้สีระบบเพื่อรองรับ Light/Dark อัตโนมัติ
+            Color(.systemBackground).ignoresSafeArea()
+
+            // การ์ดใช้พื้นหลังระบบรอง เพื่อคอนทราสต์พอดีทั้งสองโหมด
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .foregroundStyle(.linearGradient(colors: [.white, .white], startPoint: .topLeading, endPoint: .bottomLeading))
+                .fill(Color(.secondarySystemBackground))
+                .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
                 .frame(maxWidth: 350, maxHeight: 420)
-            VStack{
-                Text ("Login to join us")
+
+            VStack(spacing: 12) {
+                Text("Login to join us")
                     .font(.title)
                     .fontWeight(.bold)
-                
+                    .foregroundColor(.primary)
+
+                // TextField: ใช้สีตัวอักษรระบบ + เคอร์เซอร์สีแดงให้ชัด (หรือใช้ .accentColor ถ้าต้องการตามธีม)
                 TextField("email / username", text: $email)
                     .textFieldStyle(.roundedBorder)
+                    .tint(.red)
+                    .foregroundColor(.primary)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .frame(width: 250)
+
                 SecureField("password", text: $password)
                     .textFieldStyle(.roundedBorder)
+                    .tint(.red)
+                    .foregroundColor(.primary)
                     .textInputAutocapitalization(.never)
                     .frame(width: 250)
 
-                Button("Login"){
+                Button("Login") {
                     viewModel.signIn(identifier: email, password: password)
                 }
                 .buttonStyle(.borderedProminent)
-                
+                .tint(.red) // ให้เข้ากับปุ่มแดงในแอป
+
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
                         .foregroundColor(.red)
                 }
-                
-                // นำทางไปหน้า Sign up แยกต่างหาก
+
                 NavigationLink("Sign up") {
-                    SignupPage() // หน้าที่จะสมัครสมาชิกจริง
+                    SignupPage()
                 }
                 .buttonStyle(.bordered)
+                .tint(.blue)
                 .padding(.top, 8)
             }
+            .padding(.horizontal, 8)
         }
-        .ignoresSafeArea(edges: .all)
+        // ไม่ต้อง ignoresSafeArea แบบทับสีดำทั้งจอแล้ว
         .onReceive(viewModel.$user.compactMap { $0 }) { _ in
             // เมื่อ login สำเร็จ
             selectedTab = 0   // เปลี่ยนไปแท็บ Home

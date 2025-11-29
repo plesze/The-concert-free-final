@@ -29,61 +29,64 @@ struct Homeview: View {
     @State private var currentIndex: Int = 0
     
     var body: some View {
-        ZStack {
-            Color(.systemBackground).ignoresSafeArea()
-            
-            Group {
-                if viewModel.isLoading {
-                    VStack {
-                        ProgressView()
-                            .tint(.primary)
-                        Text("กำลังโหลดคอนเสิร์ต...")
-                            .foregroundColor(.secondary)
-                            .padding(.top, 8)
-                    }
-                } else if let error = viewModel.lastError {
-                    VStack(spacing: 12) {
-                        Image(systemName: "exclamationmark.triangle")
-                            .foregroundColor(.yellow)
-                            .font(.system(size: 36, weight: .bold))
-                        Text("โหลดข้อมูลไม่สำเร็จ")
-                            .foregroundColor(.primary)
-                            .font(.headline)
-                        Text(error)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 24)
-                        Button {
-                            Task { await viewModel.loadConcerts() }
-                        } label: {
-                            Label("ลองใหม่", systemImage: "arrow.clockwise")
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
-                                .background(Capsule().fill(Color.primary.opacity(0.15)))
+        NavigationStack {
+            ZStack {
+                Color(.systemBackground).ignoresSafeArea()
+                
+                Group {
+                    if viewModel.isLoading {
+                        VStack {
+                            ProgressView()
+                                .tint(.primary)
+                            Text("กำลังโหลดคอนเสิร์ต...")
+                                .foregroundColor(.secondary)
+                                .padding(.top, 8)
                         }
-                        .buttonStyle(.plain)
-                        .foregroundColor(.primary)
-                        .padding(.top, 4)
-                    }
-                    .padding()
-                } else if viewModel.concerts.isEmpty {
-                    VStack(spacing: 12) {
-                        Image(systemName: "music.quarternote.3")
-                            .foregroundColor(.secondary)
-                            .font(.system(size: 36, weight: .bold))
-                        Text("ยังไม่มีคอนเสิร์ต")
+                    } else if let error = viewModel.lastError {
+                        VStack(spacing: 12) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .foregroundColor(.yellow)
+                                .font(.system(size: 36, weight: .bold))
+                            Text("โหลดข้อมูลไม่สำเร็จ")
+                                .foregroundColor(.primary)
+                                .font(.headline)
+                            Text(error)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 24)
+                            Button {
+                                Task { await viewModel.loadConcerts() }
+                            } label: {
+                                Label("ลองใหม่", systemImage: "arrow.clockwise")
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 8)
+                                    .background(Capsule().fill(Color.primary.opacity(0.15)))
+                            }
+                            .buttonStyle(.plain)
                             .foregroundColor(.primary)
-                            .font(.headline)
-                        Text("โปรดกลับมาใหม่ภายหลัง")
-                            .foregroundColor(.secondary)
+                            .padding(.top, 4)
+                        }
+                        .padding()
+                    } else if viewModel.concerts.isEmpty {
+                        VStack(spacing: 12) {
+                            Image(systemName: "music.quarternote.3")
+                                .foregroundColor(.secondary)
+                                .font(.system(size: 36, weight: .bold))
+                            Text("ยังไม่มีคอนเสิร์ต")
+                                .foregroundColor(.primary)
+                                .font(.headline)
+                            Text("โปรดกลับมาใหม่ภายหลัง")
+                                .foregroundColor(.secondary)
+                        }
+                    } else {
+                        content(concerts: viewModel.concerts)
                     }
-                } else {
-                    content(concerts: viewModel.concerts)
                 }
             }
-        }
-        .task {
-            await viewModel.loadConcerts()
+            .task {
+                await viewModel.loadConcerts()
+            }
+            .navigationTitle("Home")
         }
     }
     
@@ -98,7 +101,6 @@ struct Homeview: View {
                     let concert = concerts[index]
                     
                     VStack(spacing: 0) {
-                        // โหลดรูปจาก URL
                         AsyncImage(url: URL(string: concert.imageURL)) { phase in
                             switch phase {
                             case .empty:
@@ -131,7 +133,6 @@ struct Homeview: View {
                             ConcertDetailView(concert: concert)
                         } label: {
                             VStack(alignment: .leading, spacing: 10) {
-                                
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(concert.title)
                                         .font(.headline)
