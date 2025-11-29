@@ -22,6 +22,7 @@ struct Homeview: View {
         let imageURL: String
         let detail: String
         let mapURL: String
+        let maxSeats: Int
     }
     
     // MARK: - ViewModel (โหลดจาก Firestore)
@@ -178,6 +179,7 @@ struct Homeview: View {
                                         .lineLimit(1)
                                         .truncationMode(.tail)
                                 }
+                                
                             }
                             .padding(20)
                             .frame(width: 280, height: 170)
@@ -246,7 +248,8 @@ extension Homeview {
                         let location = data["location"] as? String,
                         let detail = data["detail"] as? String,
                         let imageURL = data["imageURL"] as? String,
-                        let mapURL = data["mapURL"] as? String
+                        let mapURL = data["mapURL"] as? String,
+                        let maxSeats = data["maxSeats"] as? Int
                     else {
                         return nil
                     }
@@ -259,7 +262,8 @@ extension Homeview {
                         location: location,
                         imageURL: imageURL,
                         detail: detail,
-                        mapURL: mapURL
+                        mapURL: mapURL,
+                        maxSeats: maxSeats
                     )
                 }
                 self.concerts = items

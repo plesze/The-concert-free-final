@@ -32,7 +32,8 @@ struct TicketDetailView: View {
             location: "Sample Arena",
             imageURL: "https://example.com/sample.jpg",
             detail: "This is a sample concert used for previews.",
-            mapURL: "http://maps.apple.com/?q=Sample%20Arena"
+            mapURL: "http://maps.apple.com/?q=Sample%20Arena",
+            maxSeats: 1
         ),
         qrString: String = "ticket:previewTicket|user:preview@example.com|concert:sample",
         registerDate: Date = Date()

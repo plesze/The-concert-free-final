@@ -213,8 +213,10 @@ struct TicketView: View {
                               let location = cdata["location"] as? String,
                               let detail = cdata["detail"] as? String,
                               let imageURL = cdata["imageURL"] as? String,
-                              let mapURL = cdata["mapURL"] as? String
+                              let mapURL = cdata["mapURL"] as? String,
+                              let maxSeats = cdata["maxSeats"] as? Int 
                         else { return }
+
 
                         let concert = Homeview.Concert(
                             id: snap.documentID,
@@ -225,7 +227,8 @@ struct TicketView: View {
                             location: location,
                             imageURL: imageURL,
                             detail: detail,
-                            mapURL: mapURL
+                            mapURL: mapURL,
+                            maxSeats: maxSeats
                         )
 
                         let item = TicketItem(

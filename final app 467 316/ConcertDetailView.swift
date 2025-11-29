@@ -63,8 +63,12 @@ struct ConcertDetailView: View {
                             Image(systemName: "clock").foregroundColor(.green)
                             Text(concert.time).foregroundColor(.primary).font(.subheadline)
                         }
+                        HStack(spacing: 8) {
+                            Image(systemName: "person.fill").foregroundColor(.green)
+                            Text("Seats: \(concert.maxSeats)").foregroundColor(.primary).font(.subheadline)
+                        }
 
-                        HStack(alignment: .center, spacing: 12) {
+                        HStack(alignment: .center, spacing: 1) {
                             HStack(spacing: 8) {
                                 Image(systemName: "mappin.and.ellipse").foregroundColor(.blue)
                                 Text(concert.location).foregroundColor(.blue).font(.subheadline)
@@ -138,7 +142,7 @@ struct ConcertDetailView: View {
         }
     }
 
-    // ขั้นตอนแรก: เช็กก่อนว่าลงทะเบียนคอนเสิร์ตนี้ไปแล้วหรือยัง
+    // ขั้นตอนแรก: เช็กว่าลงทะเบียนคอนเสิร์ตไปรึยัง
     private func registerTicket() {
         guard let user = Auth.auth().currentUser else { return }
         let email = user.email ?? user.uid
@@ -161,7 +165,7 @@ struct ConcertDetailView: View {
                     return
                 }
 
-                // 2) ยังไม่เคยลง → เดินหน้าสร้างตั๋วใหม่ (แบบ doc id คงที่ ป้องกันซ้ำระดับฐานข้อมูล)
+                // 2) ยังไม่เคยลง
                 createTicket(for: email, uid: uid, db: db)
             }
     }
@@ -216,7 +220,8 @@ struct ConcertDetailView: View {
             location: "Sample Arena",
             imageURL: "https://picsum.photos/800/600",
             detail: "This is a sample concert used for previews.",
-            mapURL: "http://maps.apple.com/?q=Sample%20Arena"
+            mapURL: "http://maps.apple.com/?q=Sample%20Arena",
+            maxSeats: 1
         )
         ConcertDetailView(concert: sample)
     }
