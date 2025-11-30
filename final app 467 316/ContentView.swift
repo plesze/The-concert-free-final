@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
+    @EnvironmentObject var auth: AuthViewModel
     @State private var selectedTab: Int = 0
 
     var body: some View {
@@ -38,6 +39,14 @@ struct ContentView: View {
                     Tab(constants.ticket, systemImage: constants.ticketicon) {
                         TicketView()
                     }
+
+                    // เพิ่มแท็บ Admin เฉพาะตอนเป็นแอดมิน
+                    if auth.role == "admin" {
+                        Tab("Admin", systemImage: "shield.lefthalf.filled") {
+                            adminView()
+                        }
+                    }
+
                     Tab(constants.profile, systemImage: constants.profileicon) {
                         ProflieView(selectedTab: $selectedTab)
                     }
@@ -49,5 +58,7 @@ struct ContentView: View {
 }
 
 #Preview {
+    // สำคัญ: ต้องฉีด EnvironmentObject ให้ Preview ด้วย
     ContentView()
+        .environmentObject(AuthViewModel())
 }

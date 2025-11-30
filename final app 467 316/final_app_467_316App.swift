@@ -12,6 +12,8 @@ import FirebaseAuth
 @main
 struct final_app_467_316App: App {
     
+    @StateObject private var auth = AuthViewModel()
+    
     init() {
             FirebaseApp.configure()
         }
@@ -20,6 +22,7 @@ struct final_app_467_316App: App {
         WindowGroup {
             ThemeColor{
                 ContentView()
+                    .environmentObject(auth)
             }
         }
     }

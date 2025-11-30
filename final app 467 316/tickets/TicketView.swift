@@ -41,9 +41,6 @@ struct TicketView: View {
                     }
                 } else if let errorMessage = errorMessage {
                     VStack(spacing: 12) {
-                        Image(systemName: "exclamationmark.triangle")
-                            .foregroundColor(.yellow)
-                            .font(.system(size: 36, weight: .bold))
                         Text("โหลดตั๋วไม่สำเร็จ")
                             .font(.headline)
                             .foregroundColor(.primary)

@@ -15,8 +15,17 @@ struct ConcertDetailView: View {
     @State private var ticketQR: String = ""
     @State private var ticketDate: Date = Date()
 
-    // แจ้งเตือน “ลงทะเบียนซ้ำ”
+    // แจ้งเตือน “ลงทะเบียนซ้ำ” หรือ “เต็มแล้ว”
     @State private var showAlreadyRegisteredAlert = false
+
+    // จำนวนผู้ลงทะเบียนแบบเรียลไทม์ + listener
+    @State private var registeredCount: Int = 0
+    @State private var ticketsListener: ListenerRegistration?
+    var isFull: Bool { registeredCount >= concert.maxSeats }
+
+    // สถานะว่าผู้ใช้คนนี้ “ได้ลงทะเบียนคอนเสิร์ตนี้แล้ว” หรือยัง
+    @State private var isRegistered: Bool = false
+    @State private var myTicketListener: ListenerRegistration?
 
     var body: some View {
         NavigationStack {
@@ -65,7 +74,8 @@ struct ConcertDetailView: View {
                         }
                         HStack(spacing: 8) {
                             Image(systemName: "person.fill").foregroundColor(.green)
-                            Text("Seats: \(concert.maxSeats)").foregroundColor(.primary).font(.subheadline)
+                            Text("Seats: \(concert.maxSeats)  |  Registered: \(registeredCount)")
+                                .foregroundColor(.primary).font(.subheadline)
                         }
 
                         HStack(alignment: .center, spacing: 1) {
@@ -93,6 +103,7 @@ struct ConcertDetailView: View {
 
                         Text(concert.detail).foregroundColor(.primary)
 
+                        // ปุ่มลงทะเบียน: แสดง 3 สถานะ
                         Button {
                             if Auth.auth().currentUser == nil {
                                 showLoginAlert = true
@@ -100,15 +111,18 @@ struct ConcertDetailView: View {
                                 registerTicket()
                             }
                         } label: {
-                            Text("ลงทะเบียน")
+                            Text(isRegistered ? "ลงทะเบียนแล้ว" : (isFull ? "เต็มแล้ว" : "ลงทะเบียน"))
                                 .font(.headline)
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
-                                .background(Capsule().fill(Color.red))
+                                .background(
+                                    Capsule().fill((isRegistered || isFull) ? Color.gray : Color.red)
+                                )
                         }
+                        .disabled(isRegistered || isFull)
                         .padding(.top, 8)
-                        .shadow(color: .red.opacity(0.35), radius: 5, x: 0, y: 6)
+                        .shadow(color: ((isRegistered || isFull) ? Color.gray : Color.red).opacity(0.35), radius: 5, x: 0, y: 6)
                     }
                     .padding()
                 }
@@ -126,10 +140,10 @@ struct ConcertDetailView: View {
                 Button("เข้าสู่ระบบ") { navigateToLogin = true }
             }
 
-            .alert("คุณลงทะเบียนคอนเสิร์ตนี้ไปแล้ว", isPresented: $showAlreadyRegisteredAlert) {
+            .alert("ไม่สามารถลงทะเบียนได้", isPresented: $showAlreadyRegisteredAlert) {
                 Button("ตกลง", role: .cancel) { }
             } message: {
-                Text("ไม่สามารถลงทะเบียนซ้ำได้")
+                Text(isFull ? "คอนเสิร์ตนี้เต็มแล้ว" : "คุณลงทะเบียนคอนเสิร์ตนี้ไปแล้ว")
             }
 
             .navigationDestination(isPresented: $navigateToLogin) {
@@ -139,12 +153,27 @@ struct ConcertDetailView: View {
             .navigationDestination(isPresented: $navigateToTicket) {
                 TicketDetailView(concert: concert, qrString: ticketQR, registerDate: ticketDate)
             }
+
+            .onAppear {
+                attachTicketsListener()
+                attachMyTicketListener()
+            }
+            .onDisappear {
+                detachTicketsListener()
+                detachMyTicketListener()
+            }
         }
     }
 
-    // ขั้นตอนแรก: เช็กว่าลงทะเบียนคอนเสิร์ตไปรึยัง
     private func registerTicket() {
         guard let user = Auth.auth().currentUser else { return }
+
+        // ถ้าเต็ม หรือ ลงทะเบียนแล้ว ยกเลิกทันที
+        if isFull || isRegistered {
+            self.showAlreadyRegisteredAlert = true
+            return
+        }
+
         let email = user.email ?? user.uid
         let uid = user.uid
         let db = Firestore.firestore()
@@ -165,8 +194,18 @@ struct ConcertDetailView: View {
                     return
                 }
 
-                // 2) ยังไม่เคยลง
-                createTicket(for: email, uid: uid, db: db)
+                // 2) เช็กจำนวนล่าสุดก่อนสร้างกันกรณีเต็มพอดี
+                db.collection("tickets")
+                    .whereField("concertId", isEqualTo: self.concert.id)
+                    .getDocuments { snap2, _ in
+                        let currentCount = snap2?.documents.count ?? 0
+                        if currentCount >= self.concert.maxSeats {
+                            self.showAlreadyRegisteredAlert = true
+                            return
+                        }
+                        // 3) ยังไม่เคยลง และยังไม่เต็ม -> สร้างตั๋ว
+                        createTicket(for: email, uid: uid, db: db)
+                    }
             }
     }
 
@@ -197,10 +236,47 @@ struct ConcertDetailView: View {
                 if error == nil {
                     self.showSuccessAlert = true
                 } else {
-                    // ถ้าต้องการ แจ้ง error เพิ่มเติมได้
+                    // แจ้ง error เพิ่มเติมได้ถ้าต้องการ
                 }
             }
         }
+    }
+
+    // Listener: จำนวนผู้ลงทะเบียนทั้งหมดของ concert นี้
+    private func attachTicketsListener() {
+        let db = Firestore.firestore()
+        ticketsListener = db.collection("tickets")
+            .whereField("concertId", isEqualTo: concert.id)
+            .addSnapshotListener { snapshot, _ in
+                self.registeredCount = snapshot?.documents.count ?? 0
+            }
+    }
+
+    private func detachTicketsListener() {
+        ticketsListener?.remove()
+        ticketsListener = nil
+    }
+
+    // Listener: ฉันลงทะเบียนคอนเสิร์ตนี้แล้วหรือยัง (เฉพาะ user ปัจจุบัน)
+    private func attachMyTicketListener() {
+        guard let user = Auth.auth().currentUser else {
+            isRegistered = false
+            return
+        }
+        let email = user.email ?? user.uid
+        let db = Firestore.firestore()
+        myTicketListener = db.collection("tickets")
+            .whereField("concertId", isEqualTo: concert.id)
+            .whereField("userEmail", isEqualTo: email)
+            .addSnapshotListener { snapshot, _ in
+                // ถ้ามีเอกสารอย่างน้อย 1 แปลว่า “ลงทะเบียนแล้ว”
+                self.isRegistered = (snapshot?.documents.isEmpty == false)
+            }
+    }
+
+    private func detachMyTicketListener() {
+        myTicketListener?.remove()
+        myTicketListener = nil
     }
 
     private func mapsURL(for place: String) -> URL? {

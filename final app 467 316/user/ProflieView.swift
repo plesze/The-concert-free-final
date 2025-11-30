@@ -9,7 +9,6 @@ import SwiftUI
 import FirebaseAuth
 import FirebaseFirestore
 
-
 struct ThemeColor<Content: View>: View {
     @ViewBuilder var content: Content
     @AppStorage("AppthemeColor") private var selectedTheme: AppthemeColor = .systeamdefault
@@ -41,7 +40,7 @@ enum AppthemeColor: String, CaseIterable {
         }
     }
 }
-    
+
 struct ProflieView: View {
     @AppStorage("AppthemeColor") private var selectedTheme: AppthemeColor = .systeamdefault
     @Binding var selectedTab: Int
@@ -54,83 +53,93 @@ struct ProflieView: View {
 
     var body: some View {
         ZStack {
-            Color(.systemBackground)
-                .ignoresSafeArea()
+            Color(.systemBackground).ignoresSafeArea()
 
             if isLoggedIn {
-                VStack(spacing: 16) {
-                    Text("PROFILE")
-                        .foregroundColor(.primary)
-                        .font(.title2)
-                        .padding(.top, 20)
-                    
-                    if let email = Auth.auth().currentUser?.email {
-                        Text(email)
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    if isLoadingProfile {
-                        ProgressView()
-                            .tint(.primary)
-                    } else {
-                        // Show username and phone loaded from Firestore
-                        if !username.isEmpty {
-                            Text("Username: \(username)")
+                List {
+                    Section {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("PROFILE")
+                                .font(.title2.weight(.bold))
                                 .foregroundColor(.primary)
-                        }
-                        if !phone.isEmpty {
-                            Text("Phone: \(phone)")
-                                .foregroundColor(.primary)
-                        }
-                        if let profileError = profileError {
-                            Text(profileError)
-                                .foregroundColor(.red)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, 16)
-                        }
-                    }
-                    NavigationStack{
-                        List {
-                            Section {
-                                Picker("", selection: $selectedTheme) {
-                                    ForEach(AppthemeColor.allCases, id: \.rawValue) { theme in
-                                        Text(theme.title)
-                                            .tag(theme)
-                                    }
-                                }
-                                .pickerStyle(SegmentedPickerStyle())
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                            if let email = Auth.auth().currentUser?.email {
+                                Text(email)
+                                    .foregroundColor(.secondary)
+                                    .font(.subheadline)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                             }
                         }
-                        .scrollContentBackground(.hidden)
+                        .padding(.vertical, 4)
                     }
-                
 
-                    Button(role: .destructive) {
-                        signOut()
-                    } label: {
-                        Text("Log out")
-                            .font(.headline)
-                            .foregroundColor(.white) // ปุ่มแดงยังคงอ่านง่ายบนทั้งสองธีม
-                            .frame(maxWidth: 160)
-                            .padding(.vertical, 14)
-                            .background(
-                                Capsule().fill(Color.red)
-                            )
+                    Section("Information") {
+                        if isLoadingProfile {
+                            HStack(spacing: 10) {
+                                ProgressView().tint(.primary)
+                                Text("กำลังโหลดข้อมูลโปรไฟล์...")
+                                    .foregroundColor(.secondary)
+                            }
+                        } else {
+                            if !username.isEmpty {
+                                HStack {
+                                    Text("Username")
+                                        .foregroundColor(.secondary)
+                                    Spacer()
+                                    Text(username)
+                                        .foregroundColor(.primary)
+                                }
+                            }
+                            if !phone.isEmpty {
+                                HStack {
+                                    Text("Phone")
+                                        .foregroundColor(.secondary)
+                                    Spacer()
+                                    Text(phone)
+                                        .foregroundColor(.primary)
+                                }
+                            }
+                            if username.isEmpty && phone.isEmpty && profileError == nil {
+                                Text("ยังไม่มีข้อมูลโปรไฟล์")
+                                    .foregroundColor(.secondary)
+                            }
+                            if let profileError = profileError {
+                                Text(profileError)
+                                    .foregroundColor(.red)
+                            }
+                        }
                     }
-                    .padding(.top, 8)
 
-                    Spacer()
+                    Section("Appearance") {
+                        Picker("Theme", selection: $selectedTheme) {
+                            ForEach(AppthemeColor.allCases, id: \.rawValue) { theme in
+                                Text(theme.title).tag(theme)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+
+                    Section("Account") {
+                        Button(role: .destructive) {
+                            signOut()
+                        } label: {
+                            Text("Log out")
+                                .frame(maxWidth: .infinity, alignment: .center)
+                        }
+                    }
                 }
-                .padding(.horizontal, 24)
+                .listStyle(.insetGrouped)
                 .onAppear {
                     isLoggedIn = Auth.auth().currentUser != nil
                     fetchProfile()
                 }
+
             } else {
                 VStack(spacing: 16) {
-                    Text("PLEASE LOGIN OR REGISTER ")
+                    Text("PLEASE LOGIN OR REGISTER")
                         .foregroundColor(.primary)
-                        .font(.title2)
+                        .font(.title3.weight(.bold))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)
 
@@ -139,26 +148,25 @@ struct ProflieView: View {
                     } label: {
                         Text("Log in")
                             .font(.headline)
-                            .foregroundColor(.white) // ปุ่มแดงยังคงอ่านง่ายบนทั้งสองธีม
-                            .frame(maxWidth: 120)
-                            .padding(.vertical, 14)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: 160)
+                            .padding(.vertical, 12)
                             .background(
-                                Capsule()
-                                    .fill(Color.red)
+                                Capsule().fill(Color.red)
                             )
                     }
-                    .padding(.horizontal, 32)
-                    .shadow(color: Color.red.opacity(0.35), radius: 5, x: 0, y: 6)
-                    .accessibilityLabel("Log in")
+                    .shadow(color: Color.red.opacity(0.25), radius: 6, x: 0, y: 4)
 
                     Spacer()
                 }
-                .padding(.top, 50)
+                .padding(.top, 40)
                 .onAppear {
                     isLoggedIn = Auth.auth().currentUser != nil
                 }
             }
         }
+        .navigationTitle("Profile")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private func fetchProfile() {
@@ -186,11 +194,11 @@ struct ProflieView: View {
         do {
             try Auth.auth().signOut()
             isLoggedIn = false
-            selectedTab = 2 // อยู่แท็บโปรไฟล์เดิม
+            selectedTab = 2
             username = ""
             phone = ""
         } catch {
-            // จัดการ error ถ้าต้องการ
+            // handle error if needed
         }
     }
 }
