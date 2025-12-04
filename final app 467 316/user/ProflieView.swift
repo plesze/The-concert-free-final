@@ -50,6 +50,13 @@ struct ProflieView: View {
     @State private var phone: String = ""
     @State private var isLoadingProfile: Bool = false
     @State private var profileError: String?
+    
+    //Added for editing profile
+        @State private var showEditUsername = false    // เปิดหน้าแก้ username
+        @State private var showChangePassword = false  // เปิด alert เปลี่ยนรหัส
+
+        @State private var newUsername: String = ""    // username ใหม่
+        @State private var newPassword: String = ""    // password ใหม่
 
     var body: some View {
         ZStack {
@@ -121,11 +128,26 @@ struct ProflieView: View {
                     }
 
                     Section("Account") {
+                        //edit username button
+                        Button("Edit Username") {
+                                newUsername = username
+                                showEditUsername = true
+                            }
+                            .buttonStyle(.borderless)
+                            .frame(maxWidth: .infinity, alignment: .center)
+
+                        //change password button
+                            Button("Change Password") {
+                                showChangePassword = true
+                            }
+                            .buttonStyle(.borderless)
+                            .frame(maxWidth: .infinity, alignment: .center)
+
                         Button(role: .destructive) {
                             signOut()
                         } label: {
                             Text("Log out")
-                                .frame(maxWidth: .infinity, alignment: .center)
+                            .frame(maxWidth: .infinity, alignment: .center)
                         }
                     }
                 }
@@ -165,8 +187,23 @@ struct ProflieView: View {
         }
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)
-    }
 
+        //alert for editing username
+        .alert("Edit Username", isPresented: $showEditUsername) {
+                TextField("New Username", text: $newUsername)
+                    .autocorrectionDisabled()
+                Button("Save") { updateUsername() }
+                Button("Cancel", role: .cancel) {}
+            }
+        
+            //alert for password change
+        .alert("Change Password", isPresented: $showChangePassword) {
+                TextField("New Password", text: $newPassword)
+                Button("Save") { changePassword() }
+                Button("Cancel", role: .cancel) {}
+            }
+        }
+    
     private func fetchProfile() {
         guard let uid = Auth.auth().currentUser?.uid else { return }
         isLoadingProfile = true
@@ -199,7 +236,40 @@ struct ProflieView: View {
             // handle error if needed
         }
     }
-}
+    
+    //Update Username in Firestore
+    
+        private func updateUsername() {
+            guard let uid = Auth.auth().currentUser?.uid else { return }
+            let db = Firestore.firestore()
+
+            db.collection("users").document(uid).updateData([
+                "username": newUsername
+            ]) { error in
+                if let error = error {
+                    print("Error updating username: \(error.localizedDescription)")
+                    return
+                }
+                self.username = newUsername
+                showEditUsername = false
+            }
+        }
+
+    //Change Firebase Auth password
+    
+        private func changePassword() {
+            guard !newPassword.isEmpty else { return }
+
+            Auth.auth().currentUser?.updatePassword(to: newPassword) { error in
+                if let error = error {
+                    print("Password update error: \(error.localizedDescription)")
+                    return
+                }
+                showChangePassword = false
+                newPassword = ""
+            }
+        }
+    }
 
 #Preview {
     NavigationStack {
