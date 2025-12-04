@@ -157,9 +157,7 @@ struct ProflieView: View {
                     }
                     .shadow(color: Color.red.opacity(0.25), radius: 6, x: 0, y: 4)
 
-                    Spacer()
                 }
-                .padding(.top, 40)
                 .onAppear {
                     isLoggedIn = Auth.auth().currentUser != nil
                 }

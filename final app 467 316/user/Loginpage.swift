@@ -77,52 +77,73 @@ struct Loginpage: View {
             Color(.systemBackground).ignoresSafeArea()
 
             // การ์ดใช้พื้นหลังระบบรอง เพื่อคอนทราสต์พอดีทั้งสองโหมด
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: 30, style: .continuous)
                 .fill(Color(.secondarySystemBackground))
                 .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
-                .frame(maxWidth: 350, maxHeight: 420)
+                .frame(maxWidth: 350, maxHeight: 400)
 
-            VStack(spacing: 12) {
+            VStack(spacing: 28) {
                 Text("Login to join us")
                     .font(.title)
                     .fontWeight(.bold)
                     .foregroundColor(.primary)
 
-                // TextField: ใช้สีตัวอักษรระบบ + เคอร์เซอร์สีแดงให้ชัด (หรือใช้ .accentColor ถ้าต้องการตามธีม)
-                TextField("email / username", text: $email)
-                    .textFieldStyle(.roundedBorder)
-                    .tint(.red)
-                    .foregroundColor(.primary)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .frame(width: 250)
+                // กล่องชื่อและรหัส "ติดกัน" โดยแยกเป็น VStack ย่อย spacing: 0
+                VStack(spacing: 0) {
+                    TextField("email / username", text: $email)
+                        .foregroundColor(.primary)
+                        .padding()
+                        .frame(width: 300, height: 45)
+                        .background(Color(.systemBackground))
+                        .cornerRadius(15, antialiased: true)
+                        .tint(.red)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
 
-                SecureField("password", text: $password)
-                    .textFieldStyle(.roundedBorder)
-                    .tint(.red)
-                    .foregroundColor(.primary)
-                    .textInputAutocapitalization(.never)
-                    .frame(width: 250)
+                    // เส้นแบ่งบางๆ เพื่อให้ดูติดกันแต่ยังแยกชั้น
+                    Rectangle()
+                        .fill(Color(.separator))
+                        .frame(width: 300, height: 2)
 
-                Button("Login") {
-                    viewModel.signIn(identifier: email, password: password)
+                    SecureField("password", text: $password)
+                        .foregroundColor(.primary)
+                        .padding()
+                        .frame(width: 300, height: 45)
+                        .background(Color(.systemBackground))
+                        .cornerRadius(15, antialiased: true)
+                        .tint(.red)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.red) // ให้เข้ากับปุ่มแดงในแอป
+                // หากอยากให้เป็นการ์ดเดียวกันจริงๆ ลองใช้คลิปและสไตล์มุมด้านบน/ล่างต่างกัน:
+                .background(
+                    RoundedRectangle(cornerRadius: 15)
+                        .fill(Color(.systemBackground))
+                )
 
-                if let errorMessage = viewModel.errorMessage {
-                    Text(errorMessage)
-                        .foregroundColor(.red)
+                VStack (spacing: 5){
+                    Button("Login") {
+                        viewModel.signIn(identifier: email, password: password)
+                    }
+                    .foregroundColor(.white)
+                    .frame(width: 300, height: 45)
+                    .background(Color.red)
+                    .cornerRadius(15)
+                    
+                    if let errorMessage = viewModel.errorMessage {
+                        Text(errorMessage)
+                            .foregroundColor(.red)
+                    }
+                    
+                    NavigationLink("Sign up") {
+                        SignupPage()
+                    }
+                    .foregroundColor(.blue)
+                    .frame(width: 300, height: 45)
+                    .background(Color.blue.opacity(0.10))
+                    .cornerRadius(15)
                 }
-
-                NavigationLink("Sign up") {
-                    SignupPage()
-                }
-                .buttonStyle(.bordered)
-                .tint(.blue)
-                .padding(.top, 8)
             }
-            .padding(.horizontal, 8)
         }
         // ไม่ต้อง ignoresSafeArea แบบทับสีดำทั้งจอแล้ว
         .onReceive(viewModel.$user.compactMap { $0 }) { _ in
