@@ -11,17 +11,19 @@ import FirebaseAuth
 import CoreImage.CIFilterBuiltins
 
 struct TicketDetailView: View {
-    // MARK: - Properties
+    //Properties
     let concert: Homeview.Concert
     let qrString: String
     let registerDate: Date
-
+    
     let context = CIContext()
     let filter = CIFilter.qrCodeGenerator()
-
-    @State private var showSavedAlert = false
-
-    // MARK: - Init with default values for Preview
+    
+    @State private var hasScannedQR = false     // สแกนเสร็จ (มาจากหน้า Scan)
+    @State private var isCheckedIn = false      // กดเช็กอินแล้ว
+    @State private var showCheckinAlert = false // alert
+    
+    //Init with default values for Preview
     init(
         concert: Homeview.Concert = Homeview.Concert(
             id: "sample-id",
@@ -42,134 +44,155 @@ struct TicketDetailView: View {
         self.qrString = qrString
         self.registerDate = registerDate
     }
-
-    // MARK: - Body
+    
+    //Body
     var body: some View {
         ZStack {
-            Color(.systemGroupedBackground).ignoresSafeArea()
-
-            ticketCardView
-                .padding(.horizontal)
-        }
-        .safeAreaInset(edge: .bottom) {
-            saveButton
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
-        }
-        .navigationTitle("ตั๋วของคุณ")
-        .navigationBarTitleDisplayMode(.inline)
-        .alert("Saved!", isPresented: $showSavedAlert) {
-            Button("OK", role: .cancel) { }
-        }
-    }
-
-    // MARK: - Ticket Card View
-    var ticketCardView: some View {
-        RoundedRectangle(cornerRadius: 24)
-            .fill(Color(.systemBackground))
-            .shadow(radius: 4)
-            .overlay(
-                VStack(spacing: 16) {
-
-                    // Concert Title
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(concert.title)
-                            .font(.title2.bold())
-                            .foregroundStyle(.primary)
-
-                        Text(concert.location)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Divider()
-
-                    // QR Code
-                    Image(uiImage: generateQR(from: qrString))
-                        .interpolation(.none)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 200, height: 200)
-                        .padding(.vertical, 12)
-
-                    Divider()
-
-                    // Detail Section
-                    VStack(alignment: .leading, spacing: 12) {
-
-                        HStack {
-                            Text("Event Time:")
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            Text("\(concert.date) • \(concert.time)")
-                                .bold()
-                                .foregroundStyle(.primary)
-                        }
-
-                        HStack {
-                            Text("Location:")
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            Text(concert.location)
-                                .bold()
-                                .foregroundStyle(.primary)
-                        }
-
-                    }
-                    .padding(.horizontal, 6)
-                    .padding(.bottom, 8)
+            Color(.systemBackground).ignoresSafeArea()
+            
+            VStack(spacing: 16) {
+                Spacer()
+                
+                // Card container
+                ZStack {
+                    RoundedRectangle(cornerRadius: 15, style: .continuous)
+                        .fill(Color(.secondarySystemBackground))
+                        .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
+                        .frame(maxWidth: 380, maxHeight: 510)
+                    
+                    ticketCardView
+                        .padding()
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 8)
-            )
-    }
-
-    // MARK: - Save Button
-    var saveButton: some View {
-        Button {
-            saveTicketAsImage()
-        } label: {
-            Label("Save as image", systemImage: "square.and.arrow.down")
-                .frame(maxWidth: .infinity)
+                
+                // MARK: - ปุ่มเช็กอิน (เทา → แดง → เขียว)
+                VStack(spacing: 10) {
+                    
+                    // ปุ่มเทา (ยังไม่สแกน)
+                    if hasScannedQR == false {
+                        Button {} label: {
+                            Text("กรุณาสแกน QR ก่อน")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.gray.opacity(0.3))
+                                .foregroundColor(.gray)
+                                .cornerRadius(12)
+                        }
+                        .frame(width: 380)
+                        .disabled(true)
+                        
+                    } else {
+                        // ปุ่มแดง → เขียว หลังสแกน
+                        Button {
+                            checkInToEvent()
+                        } label: {
+                            Text(isCheckedIn ? "เข้างานแล้ว" : "ยืนยันว่าเข้างานแล้ว")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(isCheckedIn ? Color.green : Color.red)
+                                .foregroundColor(.white)
+                                .cornerRadius(12)
+                        }
+                        .frame(width: 380)
+                        .disabled(isCheckedIn)
+                    }
+                }
+                .padding(.top, 10)
+                .alert("เช็กอินสำเร็จ!", isPresented: $showCheckinAlert) {
+                    Button("OK", role: .cancel) { }
+                }
+                
+                Spacer()
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .buttonStyle(.borderedProminent) // ใช้ accent/tint ของระบบอัตโนมัติ
-        .tint(.accentColor)              // ให้ตามธีม/Accent ที่ผู้ใช้เลือก
-        .padding(.bottom, 8)
+        .navigationTitle("E-Ticket")
+        .navigationBarTitleDisplayMode(.inline)
     }
-
-    // MARK: - QR Code Generator
+    
+    //Ticket Card View
+    var ticketCardView: some View {
+        VStack(alignment: .center, spacing: 10) {
+            
+            Text(concert.title)
+                .font(.title.bold())
+                .foregroundStyle(.primary)
+            
+            Text(concert.location)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            
+            Divider()
+                .frame(width: 380)
+            
+            Image(uiImage: generateQR(from: qrString))
+                .interpolation(.none)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 200, height: 200)
+                .padding(.vertical, 15)
+            
+            Divider()
+                .frame(width: 380)
+            
+            VStack(alignment: .trailing, spacing: 12) {
+                HStack {
+                    Text("Event Time:")
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text("\(concert.date) • \(concert.time)")
+                        .bold()
+                        .foregroundStyle(.primary)
+                }
+                
+                HStack {
+                    Text("Location:")
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text(concert.location)
+                        .bold()
+                        .foregroundStyle(.primary)
+                }
+            }
+            .frame(width: 340, height: 100)
+        }
+    }
+    
+    //QR Code Generator
     func generateQR(from string: String, size: CGFloat = 200) -> UIImage {
         filter.message = Data(string.utf8)
-
+        
         guard let outputImage = filter.outputImage else {
             return UIImage(systemName: "xmark.circle") ?? UIImage()
         }
-
+        
         let scale = size / outputImage.extent.size.width
         let transformedImage = outputImage.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
-
+        
         guard let cgImage = context.createCGImage(transformedImage, from: transformedImage.extent) else {
             return UIImage(systemName: "xmark.circle") ?? UIImage()
         }
-
+        
         return UIImage(cgImage: cgImage)
     }
-
-    // MARK: - Save Ticket
-    func saveTicketAsImage() {
-        let renderer = ImageRenderer(content: ticketCardView)
-        renderer.scale = UIScreen.main.scale
-        if let image = renderer.uiImage {
-            UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
-            showSavedAlert = true
-        }
+    
+    // MARK: - เช็กอิน (หลังสแกน)
+    func checkInToEvent() {
+        guard hasScannedQR else { return }
+        
+        isCheckedIn = true
+        showCheckinAlert = true
     }
-
+    
 }
 
-// MARK: - Preview
+//Preview
 #Preview {
     NavigationStack {
         TicketDetailView()
     }
 }
+
+
+
