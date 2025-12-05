@@ -29,7 +29,7 @@ struct SignupPage: View {
             Color(.systemBackground).ignoresSafeArea()
 
             // Card-like container
-            RoundedRectangle(cornerRadius: 30, style: .continuous)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(Color(.secondarySystemBackground))
                 .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
                 .frame(maxWidth: 350, maxHeight: 510)
@@ -123,13 +123,15 @@ struct SignupPage: View {
                 
                 VStack(spacing: 15) {
                     // Sign up button triggers validation + Firebase Auth + Firestore write
-                    Button("Sign up") {
-                        signUp()
-                    }
-                    .foregroundColor(.white)
-                    .frame(width: 300, height: 45)
-                    .background(Color.red)
-                    .cornerRadius(15)
+                    Button(action: {
+                            signUp()
+                        }) {
+                            Text("Sign up")
+                                .foregroundColor(.white)
+                                .frame(width: 300, height: 45)
+                                .background(Color.red)
+                                .cornerRadius(15)
+                        }
                     
                     // Show validation or backend errors here
                     if let errorMessage = errorMessage {

@@ -70,24 +70,24 @@ struct Loginpage: View {
     @State private var password: String = ""
     @StateObject private var viewModel = SignInViewModel()
     @Environment(\.dismiss) private var dismiss
-
+    
     var body: some View {
         ZStack {
             // ใช้สีระบบเพื่อรองรับ Light/Dark อัตโนมัติ
             Color(.systemBackground).ignoresSafeArea()
-
+            
             // การ์ดใช้พื้นหลังระบบรอง เพื่อคอนทราสต์พอดีทั้งสองโหมด
-            RoundedRectangle(cornerRadius: 30, style: .continuous)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(Color(.secondarySystemBackground))
                 .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
                 .frame(maxWidth: 350, maxHeight: 400)
-
-            VStack(spacing: 28) {
+            
+            VStack(spacing: 35) {
                 Text("Login to join us")
                     .font(.title)
                     .fontWeight(.bold)
                     .foregroundColor(.primary)
-
+                
                 // กล่องชื่อและรหัส "ติดกัน" โดยแยกเป็น VStack ย่อย spacing: 0
                 VStack(spacing: 0) {
                     TextField("email / username", text: $email)
@@ -99,12 +99,12 @@ struct Loginpage: View {
                         .tint(.red)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-
+                    
                     // เส้นแบ่งบางๆ เพื่อให้ดูติดกันแต่ยังแยกชั้น
                     Rectangle()
                         .fill(Color(.separator))
                         .frame(width: 300, height: 2)
-
+                    
                     SecureField("password", text: $password)
                         .foregroundColor(.primary)
                         .padding()
@@ -120,44 +120,49 @@ struct Loginpage: View {
                     RoundedRectangle(cornerRadius: 15)
                         .fill(Color(.systemBackground))
                 )
-
-                VStack (spacing: 5){
-                    Button("Login") {
+                
+                VStack(spacing: 5) {
+                    Button(action: {
                         viewModel.signIn(identifier: email, password: password)
+                    }) {
+                        Text("Login")
+                            .foregroundColor(.white)
+                            .frame(width: 300, height: 45)
+                            .background(Color.red)
+                            .cornerRadius(15)
                     }
-                    .foregroundColor(.white)
-                    .frame(width: 300, height: 45)
-                    .background(Color.red)
-                    .cornerRadius(15)
+                    .contentShape(Rectangle()) // ทำให้พื้นที่เต็ม frame กดได้
                     
                     if let errorMessage = viewModel.errorMessage {
                         Text(errorMessage)
                             .foregroundColor(.red)
                     }
                     
-                    NavigationLink("Sign up") {
-                        SignupPage()
+                    NavigationLink(destination: SignupPage()) {
+                        Text("Don't have an account yet? Sign up")
+                            .foregroundColor(.blue)
+                            .padding(.vertical, 5)  // เพิ่มพื้นที่กดรอบข้อความ
+                            .padding(.horizontal, 5)
                     }
-                    .foregroundColor(.blue)
-                    .frame(width: 300, height: 45)
-                    .background(Color.blue.opacity(0.10))
-                    .cornerRadius(15)
+                    .buttonStyle(.plain)
+                    .contentShape(Rectangle()) // ทำให้ทั้งพื้นที่เป็นโซนกด
                 }
             }
-        }
-        // ไม่ต้อง ignoresSafeArea แบบทับสีดำทั้งจอแล้ว
-        .onReceive(viewModel.$user.compactMap { $0 }) { _ in
-            // เมื่อ login สำเร็จ
-            selectedTab = 0   // เปลี่ยนไปแท็บ Home
-            dismiss()         // ปิดหน้า Login
+            // ไม่ต้อง ignoresSafeArea แบบทับสีดำทั้งจอแล้ว
+            .onReceive(viewModel.$user.compactMap { $0 }) { _ in
+                // เมื่อ login สำเร็จ
+                selectedTab = 0   // เปลี่ยนไปแท็บ Home
+                dismiss()         // ปิดหน้า Login
+            }
         }
     }
 }
+    
+    #Preview {
+        // ถ้า Preview ไม่ได้อยู่ใน NavigationStack ให้ห่อเพื่อทดสอบ Navigation
+        NavigationStack {
+            // Provide a constant binding for preview
+            Loginpage(selectedTab: .constant(2))
+        }
+    }
 
-#Preview {
-    // ถ้า Preview ไม่ได้อยู่ใน NavigationStack ให้ห่อเพื่อทดสอบ Navigation
-    NavigationStack {
-        // Provide a constant binding for preview
-        Loginpage(selectedTab: .constant(2))
-    }
-}
