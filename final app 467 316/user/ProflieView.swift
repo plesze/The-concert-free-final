@@ -51,12 +51,11 @@ struct ProflieView: View {
     @State private var isLoadingProfile: Bool = false
     @State private var profileError: String?
     
-    //Added for editing profile
-        @State private var showEditUsername = false    // เปิดหน้าแก้ username
-        @State private var showChangePassword = false  // เปิด alert เปลี่ยนรหัส
+    @State private var showEditUsername = false
+    @State private var showChangePassword = false
 
-        @State private var newUsername: String = ""    // username ใหม่
-        @State private var newPassword: String = ""    // password ใหม่
+    @State private var newUsername: String = ""
+    @State private var newPassword: String = ""
 
     var body: some View {
         ZStack {
@@ -128,30 +127,32 @@ struct ProflieView: View {
                     }
 
                     Section("Account") {
-                        //edit username button
+                        // ใช้ separator ของระบบให้เส้นเต็ม และจัดปุ่มชิดซ้ายเหมือนแถวปกติ
                         Button("Edit Username") {
-                                newUsername = username
-                                showEditUsername = true
-                            }
-                            .buttonStyle(.borderless)
-                            .frame(maxWidth: .infinity, alignment: .center)
+                            newUsername = username
+                            showEditUsername = true
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .listRowSeparator(.visible)
 
-                        //change password button
-                            Button("Change Password") {
-                                showChangePassword = true
-                            }
-                            .buttonStyle(.borderless)
-                            .frame(maxWidth: .infinity, alignment: .center)
+                        Button("Change Password") {
+                            showChangePassword = true
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .listRowSeparator(.visible)
 
                         Button(role: .destructive) {
                             signOut()
                         } label: {
                             Text("Log out")
-                            .frame(maxWidth: .infinity, alignment: .center)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
+                        .listRowSeparator(.visible)
                     }
                 }
-                .listStyle(.insetGrouped)
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .background(Color(.systemBackground))
                 .onAppear {
                     isLoggedIn = Auth.auth().currentUser != nil
                     fetchProfile()
@@ -188,21 +189,19 @@ struct ProflieView: View {
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)
 
-        //alert for editing username
         .alert("Edit Username", isPresented: $showEditUsername) {
-                TextField("New Username", text: $newUsername)
-                    .autocorrectionDisabled()
-                Button("Save") { updateUsername() }
-                Button("Cancel", role: .cancel) {}
-            }
-        
-            //alert for password change
-        .alert("Change Password", isPresented: $showChangePassword) {
-                TextField("New Password", text: $newPassword)
-                Button("Save") { changePassword() }
-                Button("Cancel", role: .cancel) {}
-            }
+            TextField("New Username", text: $newUsername)
+                .autocorrectionDisabled()
+            Button("Save") { updateUsername() }
+            Button("Cancel", role: .cancel) {}
         }
+        
+        .alert("Change Password", isPresented: $showChangePassword) {
+            TextField("New Password", text: $newPassword)
+            Button("Save") { changePassword() }
+            Button("Cancel", role: .cancel) {}
+        }
+    }
     
     private func fetchProfile() {
         guard let uid = Auth.auth().currentUser?.uid else { return }
@@ -237,39 +236,35 @@ struct ProflieView: View {
         }
     }
     
-    //Update Username in Firestore
-    
-        private func updateUsername() {
-            guard let uid = Auth.auth().currentUser?.uid else { return }
-            let db = Firestore.firestore()
+    private func updateUsername() {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        let db = Firestore.firestore()
 
-            db.collection("users").document(uid).updateData([
-                "username": newUsername
-            ]) { error in
-                if let error = error {
-                    print("Error updating username: \(error.localizedDescription)")
-                    return
-                }
-                self.username = newUsername
-                showEditUsername = false
+        db.collection("users").document(uid).updateData([
+            "username": newUsername
+        ]) { error in
+            if let error = error {
+                print("Error updating username: \(error.localizedDescription)")
+                return
             }
-        }
-
-    //Change Firebase Auth password
-    
-        private func changePassword() {
-            guard !newPassword.isEmpty else { return }
-
-            Auth.auth().currentUser?.updatePassword(to: newPassword) { error in
-                if let error = error {
-                    print("Password update error: \(error.localizedDescription)")
-                    return
-                }
-                showChangePassword = false
-                newPassword = ""
-            }
+            self.username = newUsername
+            showEditUsername = false
         }
     }
+
+    private func changePassword() {
+        guard !newPassword.isEmpty else { return }
+
+        Auth.auth().currentUser?.updatePassword(to: newPassword) { error in
+            if let error = error {
+                print("Password update error: \(error.localizedDescription)")
+                return
+            }
+            showChangePassword = false
+            newPassword = ""
+        }
+    }
+}
 
 #Preview {
     NavigationStack {

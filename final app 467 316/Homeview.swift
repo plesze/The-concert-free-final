@@ -101,38 +101,38 @@ struct Homeview: View {
                 ForEach(concerts.indices, id: \.self) { index in
                     let concert = concerts[index]
                     
-                    VStack(spacing: 0) {
-                        AsyncImage(url: URL(string: concert.imageURL)) { phase in
-                            switch phase {
-                            case .empty:
-                                ZStack {
+                    NavigationLink {
+                        ConcertDetailView(concert: concert)
+                    } label: {
+                        VStack(spacing: 0) {
+                            AsyncImage(url: URL(string: concert.imageURL)) { phase in
+                                switch phase {
+                                case .empty:
+                                    ZStack {
+                                        Color.gray.opacity(0.2)
+                                        ProgressView()
+                                            .tint(.primary)
+                                    }
+                                case .success(let image):
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                case .failure:
+                                    ZStack {
+                                        Color.gray.opacity(0.2)
+                                        Image(systemName: "photo")
+                                            .foregroundColor(.secondary)
+                                    }
+                                @unknown default:
                                     Color.gray.opacity(0.2)
-                                    ProgressView()
-                                        .tint(.primary)
                                 }
-                            case .success(let image):
-                                image
-                                    .resizable()
-                                    .scaledToFill()
-                            case .failure:
-                                ZStack {
-                                    Color.gray.opacity(0.2)
-                                    Image(systemName: "photo")
-                                        .foregroundColor(.secondary)
-                                }
-                            @unknown default:
-                                Color.gray.opacity(0.2)
                             }
-                        }
-                        .frame(height: 320)
-                        .frame(width: 280)
-                        .clipShape(RoundedRectangle(cornerRadius: 1))
-                        
-                        Spacer().frame(height: 0)
-                        
-                        NavigationLink {
-                            ConcertDetailView(concert: concert)
-                        } label: {
+                            .frame(height: 320)
+                            .frame(width: 280)
+                            .clipShape(RoundedRectangle(cornerRadius: 1))
+                            
+                            Spacer().frame(height: 0)
+                            
                             VStack(alignment: .leading, spacing: 10) {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(concert.title)
@@ -190,11 +190,9 @@ struct Homeview: View {
                             .shadow(color: Color.black.opacity(0.2), radius: 12, x: 0, y: 8)
                             .contentShape(Rectangle())
                         }
-                        .buttonStyle(.plain)
-                        .padding(.horizontal, 24)
-                        .padding(.top, 2)
+                        .padding(.horizontal)
                     }
-                    .padding(.horizontal)
+                    .buttonStyle(.plain)
                     .tag(index)
                 }
             }

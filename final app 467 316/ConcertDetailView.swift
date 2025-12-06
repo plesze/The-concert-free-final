@@ -55,35 +55,57 @@ struct ConcertDetailView: View {
                         .frame(height: 500)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
 
-                        Text(concert.title)
-                            .font(.title2).fontWeight(.black)
-                            .foregroundColor(.primary)
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(concert.title)
+                                .font(.title2).fontWeight(.black)
+                                .foregroundColor(.primary)
 
-                        Text(concert.subtitle)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-
-                        HStack(spacing: 8) {
-                            Image(systemName: "calendar").foregroundColor(.green)
-                            Text(concert.date).foregroundColor(.green).font(.subheadline)
+                            Text(concert.subtitle)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
                         }
+                        .padding(.horizontal, 8)
 
-                        HStack(spacing: 8) {
-                            Image(systemName: "clock").foregroundColor(.green)
-                            Text(concert.time).foregroundColor(.primary).font(.subheadline)
-                        }
-                        HStack(spacing: 8) {
-                            Image(systemName: "person.fill").foregroundColor(.green)
-                            Text("Seats: \(concert.maxSeats)  |  Registered: \(registeredCount)")
-                                .foregroundColor(.primary).font(.subheadline)
-                        }
-
-                        HStack(alignment: .center, spacing: 1) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "mappin.and.ellipse").foregroundColor(.blue)
-                                Text(concert.location).foregroundColor(.blue).font(.subheadline)
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack(spacing: 10) {
+                                Image(systemName: "calendar").foregroundColor(.green)
+                                Text(concert.date)
+                                    .foregroundColor(.green)
+                                    .font(.subheadline)
+                                Spacer()
                             }
+
+                            HStack(spacing: 10) {
+                                Image(systemName: "clock").foregroundColor(.green)
+                                Text(concert.time)
+                                    .foregroundColor(.primary)
+                                    .font(.subheadline)
+                                Spacer()
+                            }
+
+                            HStack(spacing: 10) {
+                                Image(systemName: "person.fill").foregroundColor(.green)
+                                Text("Seats: \(concert.maxSeats)  |  Registered: \(registeredCount)")
+                                    .foregroundColor(.primary)
+                                    .font(.subheadline)
+                                Spacer()
+                            }
+                        }
+
+                        // บรรทัด Location + ปุ่มเปิดแผนที่ ให้อยู่แถวเดียว
+                        HStack(spacing: 8) {
+                            Image(systemName: "mappin.and.ellipse")
+                                .foregroundColor(.blue)
+
+                            Text(concert.location)
+                                .foregroundColor(.blue)
+                                .font(.subheadline)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                                .layoutPriority(0)
+
                             Spacer(minLength: 8)
+
                             Button {
                                 if let url = URL(string: concert.mapURL) {
                                     openURL(url)
@@ -94,16 +116,22 @@ struct ConcertDetailView: View {
                                 Label("เปิดแผนที่", systemImage: "arrow.turn.up.right")
                                     .font(.callout.weight(.semibold))
                                     .foregroundColor(.white)
-                                    .padding(.vertical, 8)
-                                    .padding(.horizontal, 12)
-                                    .background(Capsule().fill(Color.blue.opacity(0.8)))
+                                    .padding(.vertical, 10)
+                                    .padding(.horizontal, 16)
+                                    .background(Capsule().fill(Color.blue.opacity(0.9)))
                             }
                             .buttonStyle(.plain)
+                            .layoutPriority(1)
                         }
+                        .padding(.horizontal, 4)
 
-                        Text(concert.detail).foregroundColor(.primary)
+                        Text(concert.detail)
+                            .foregroundColor(.primary)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 6)
 
-                        // ปุ่มลงทะเบียน: แสดง 3 สถานะ
                         Button {
                             if Auth.auth().currentUser == nil {
                                 showLoginAlert = true
@@ -124,7 +152,9 @@ struct ConcertDetailView: View {
                         .padding(.top, 8)
                         .shadow(color: ((isRegistered || isFull) ? Color.gray : Color.red).opacity(0.35), radius: 5, x: 0, y: 6)
                     }
-                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 18)
                 }
             }
             .navigationTitle("รายละเอียดคอนเสิร์ต")
@@ -168,7 +198,6 @@ struct ConcertDetailView: View {
     private func registerTicket() {
         guard let user = Auth.auth().currentUser else { return }
 
-        // ถ้าเต็ม หรือ ลงทะเบียนแล้ว ยกเลิกทันที
         if isFull || isRegistered {
             self.showAlreadyRegisteredAlert = true
             return
@@ -178,7 +207,6 @@ struct ConcertDetailView: View {
         let uid = user.uid
         let db = Firestore.firestore()
 
-        // 1) เช็กซ้ำ: มี ticket ของ user นี้กับ concert นี้อยู่แล้วหรือยัง
         db.collection("tickets")
             .whereField("userEmail", isEqualTo: email)
             .whereField("concertId", isEqualTo: concert.id)
@@ -194,7 +222,6 @@ struct ConcertDetailView: View {
                     return
                 }
 
-                // 2) เช็กจำนวนล่าสุดก่อนสร้างกันกรณีเต็มพอดี
                 db.collection("tickets")
                     .whereField("concertId", isEqualTo: self.concert.id)
                     .getDocuments { snap2, _ in
@@ -203,25 +230,21 @@ struct ConcertDetailView: View {
                             self.showAlreadyRegisteredAlert = true
                             return
                         }
-                        // 3) ยังไม่เคยลง และยังไม่เต็ม -> สร้างตั๋ว
                         createTicket(for: email, uid: uid, db: db)
                     }
             }
     }
 
-    // สร้างตั๋วด้วย document id คงที่ = "{uid}_{concertId}"
     private func createTicket(for email: String, uid: String, db: Firestore) {
         let fixedDocId = "\(uid)_\(concert.id)"
         let docRef = db.collection("tickets").document(fixedDocId)
 
-        // ถ้าเอกสารมีอยู่แล้ว ไม่ต้องสร้างซ้ำ (กันกรณี race condition)
         docRef.getDocument { snapshot, error in
             if let snapshot, snapshot.exists {
                 self.showAlreadyRegisteredAlert = true
                 return
             }
 
-            // ค่อยสร้างใหม่
             self.ticketDate = Date()
             self.ticketQR = "ticket:\(fixedDocId)|user:\(email)|concert:\(concert.id)"
 
@@ -235,14 +258,11 @@ struct ConcertDetailView: View {
             docRef.setData(data) { error in
                 if error == nil {
                     self.showSuccessAlert = true
-                } else {
-                    // แจ้ง error เพิ่มเติมได้ถ้าต้องการ
                 }
             }
         }
     }
 
-    // Listener: จำนวนผู้ลงทะเบียนทั้งหมดของ concert นี้
     private func attachTicketsListener() {
         let db = Firestore.firestore()
         ticketsListener = db.collection("tickets")
@@ -257,7 +277,6 @@ struct ConcertDetailView: View {
         ticketsListener = nil
     }
 
-    // Listener: ฉันลงทะเบียนคอนเสิร์ตนี้แล้วหรือยัง (เฉพาะ user ปัจจุบัน)
     private func attachMyTicketListener() {
         guard let user = Auth.auth().currentUser else {
             isRegistered = false
@@ -269,7 +288,6 @@ struct ConcertDetailView: View {
             .whereField("concertId", isEqualTo: concert.id)
             .whereField("userEmail", isEqualTo: email)
             .addSnapshotListener { snapshot, _ in
-                // ถ้ามีเอกสารอย่างน้อย 1 แปลว่า “ลงทะเบียนแล้ว”
                 self.isRegistered = (snapshot?.documents.isEmpty == false)
             }
     }
