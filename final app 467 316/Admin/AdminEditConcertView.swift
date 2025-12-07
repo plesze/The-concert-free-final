@@ -154,9 +154,9 @@ struct AdminEditConcertView: View {
                     errorMessage = "เพิ่มไม่สำเร็จ: \(error.localizedDescription)"
                     return
                 }
-                // ต้องอ่าน id ล่าสุดกลับมา; ทางง่ายคือ query ล่าสุด หรือใช้ document() แล้ว setData
+                // อ่าน id ล่าสุดกลับมา
                 let newDoc = db.collection("concerts").document()
-                // ใช้วิธีสร้าง id เองเพื่อให้รู้ id แน่นอน แล้วค่อย setData
+                // สร้าง id เองแล้วsetData
                 isSaving = true
                 newDoc.setData(payload) { err in
                     isSaving = false

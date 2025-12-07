@@ -58,7 +58,6 @@ struct ContentView: View {
 }
 
 #Preview {
-    // สำคัญ: ต้องฉีด EnvironmentObject ให้ Preview ด้วย
     ContentView()
         .environmentObject(AuthViewModel())
 }

@@ -23,7 +23,7 @@ struct AdminConcertListView: View {
     @State private var pendingDeleteId: String?
 
     private let db = Firestore.firestore()
-    // เก็บ listener ของแต่ละ concertId
+    // เก็บ “ตัวอัปเดตข้อมูลเรียลไทม์” ของแต่ละ concertId
     @State private var ticketListeners: [String: ListenerRegistration] = [:]
 
     var body: some View {
@@ -57,10 +57,10 @@ struct AdminConcertListView: View {
                     AdminEditConcertView(concert: concert) { updated in
                         if let idx = concerts.firstIndex(where: { $0.id == updated.id }) {
                             concerts[idx] = updated
-                            // listener จะยังทำงานอยู่ ไม่ต้องนับใหม่
+                            
                         } else {
                             concerts.append(updated)
-                            attachTicketListener(for: updated.id) // แนบ listener ให้รายการใหม่
+                            attachTicketListener(for: updated.id)
                         }
                     }
                 } label: {
@@ -137,7 +137,7 @@ struct AdminConcertListView: View {
     private func loadConcerts() {
         isLoading = true
         errorMessage = nil
-        detachAllTicketListeners()
+        detachAllTicketListeners() // รีเซ็ตตัวอัปเดตข้อมูลเรียลไทมเดิมก่อนโหลดใหม่
 
         db.collection("concerts").getDocuments { snapshot, error in
             isLoading = false
@@ -176,7 +176,7 @@ struct AdminConcertListView: View {
 
             self.concerts = items
 
-            // แนบ listener ให้ทุก concert เพื่ออัปเดต registeredCount แบบเรียลไทม์
+            // แนบตัวอัปเดตข้อมูลเรียลไทม์ให้ทุกคอนเสิร์ต เพื่ออัปเดต registeredCount
             for c in items {
                 attachTicketListener(for: c.id)
             }
@@ -184,7 +184,7 @@ struct AdminConcertListView: View {
     }
 
     private func attachTicketListener(for concertId: String) {
-        // ป้องกันแนบซ้ำ
+        // ป้องกันแนบอัปเดตข้อมูลเรียลไทม์ซ้ำ
         if ticketListeners[concertId] != nil { return }
 
         let listener = db.collection("tickets")
@@ -207,7 +207,7 @@ struct AdminConcertListView: View {
     }
 
     private func deleteConcert(id: String) {
-        // ถอด listener ก่อนลบ
+        // ถอดตัวอัปเดตข้อมูลเรียลไทม์ของงานนี้ก่อนลบ
         if let l = ticketListeners[id] {
             l.remove()
             ticketListeners[id] = nil

@@ -7,10 +7,10 @@ final class AuthViewModel: ObservableObject {
     @Published var isAuthenticated: Bool = false
     @Published var role: String? = nil        
     @Published var isLoading: Bool = false
-
+    
     private var authListener: AuthStateDidChangeListenerHandle? = nil
     private let db = Firestore.firestore()
-
+    
     init() {
         // ฟังทุกครั้งที่สถานะผู้ใช้เปลี่ยน (ล็อกอิน/ล็อกเอาต์)
         authListener = Auth.auth().addStateDidChangeListener { [weak self] _, user in
@@ -24,13 +24,13 @@ final class AuthViewModel: ObservableObject {
             }
         }
     }
-
+    
     deinit {
         if let handle = authListener {
             Auth.auth().removeStateDidChangeListener(handle)
         }
     }
-
+    
     // โหลดว่าเป็น admin หรือ user จากFirestore
     func fetchRole(for uid: String) {
         isLoading = true
@@ -44,15 +44,7 @@ final class AuthViewModel: ObservableObject {
             }
         }
     }
-
-    // เผื่ออยากใช้ปุ่มออกจากระบบแบบรวมศูนย์
-    func signOut() {
-        do {
-            try Auth.auth().signOut()
-            self.isAuthenticated = false
-            self.role = nil
-        } catch {
-            print("Sign out failed: \(error.localizedDescription)")
-        }
-    }
+    
+    
+    
 }

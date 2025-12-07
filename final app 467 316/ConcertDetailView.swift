@@ -18,7 +18,7 @@ struct ConcertDetailView: View {
     // แจ้งเตือน “ลงทะเบียนซ้ำ” หรือ “เต็มแล้ว”
     @State private var showAlreadyRegisteredAlert = false
 
-    // จำนวนผู้ลงทะเบียนแบบเรียลไทม์ + listener
+    // จำนวนผู้ลงทะเบียนแบบเรียลไทม์ + ตัวอัปเดตข้อมูลเรียลไทม์
     @State private var registeredCount: Int = 0
     @State private var ticketsListener: ListenerRegistration?
     var isFull: Bool { registeredCount >= concert.maxSeats }
@@ -92,7 +92,6 @@ struct ConcertDetailView: View {
                             }
                         }
 
-                        // บรรทัด Location + ปุ่มเปิดแผนที่ ให้อยู่แถวเดียว
                         HStack(spacing: 8) {
                             Image(systemName: "mappin.and.ellipse")
                                 .foregroundColor(.blue)
@@ -221,7 +220,7 @@ struct ConcertDetailView: View {
                     self.showAlreadyRegisteredAlert = true
                     return
                 }
-
+                // เช็คจำนวนที่นั่งคงเหลือแบบเรียลไทม์อีกรอบ
                 db.collection("tickets")
                     .whereField("concertId", isEqualTo: self.concert.id)
                     .getDocuments { snap2, _ in
@@ -265,6 +264,7 @@ struct ConcertDetailView: View {
 
     private func attachTicketsListener() {
         let db = Firestore.firestore()
+        // ติดตั้ง “ตัวอัปเดตข้อมูลเรียลไทม์” เพื่ออัปเดตจำนวนผู้ลงทะเบียนของงานนี้
         ticketsListener = db.collection("tickets")
             .whereField("concertId", isEqualTo: concert.id)
             .addSnapshotListener { snapshot, _ in
@@ -273,6 +273,7 @@ struct ConcertDetailView: View {
     }
 
     private func detachTicketsListener() {
+        // ถอด “ตัวอัปเดตข้อมูลเรียลไทม์” ของจำนวนผู้ลงทะเบียน
         ticketsListener?.remove()
         ticketsListener = nil
     }
@@ -284,6 +285,7 @@ struct ConcertDetailView: View {
         }
         let email = user.email ?? user.uid
         let db = Firestore.firestore()
+        // ติดตั้ง “ตัวอัปเดตข้อมูลเรียลไทม์” เพื่อตรวจว่าผู้ใช้คนนี้มีตั๋วของงานนี้หรือยัง
         myTicketListener = db.collection("tickets")
             .whereField("concertId", isEqualTo: concert.id)
             .whereField("userEmail", isEqualTo: email)
@@ -293,6 +295,7 @@ struct ConcertDetailView: View {
     }
 
     private func detachMyTicketListener() {
+        // ถอด “ตัวอัปเดตข้อมูลเรียลไทม์” ของสถานะตั๋วผู้ใช้
         myTicketListener?.remove()
         myTicketListener = nil
     }
