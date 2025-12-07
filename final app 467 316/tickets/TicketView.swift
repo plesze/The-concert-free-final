@@ -24,10 +24,6 @@ struct TicketView: View {
     @State private var isLoading: Bool = false
     @State private var errorMessage: String?
 
-    // สถานะลบ
-    @State private var showDeleteConfirm: Bool = false
-    @State private var ticketToDelete: TicketItem?
-
     var body: some View {
         NavigationStack {
             ZStack {
@@ -68,71 +64,52 @@ struct TicketView: View {
                         Text("ยังไม่มีตั๋ว")
                             .font(.headline)
                             .foregroundColor(.primary)
-                        Text("ไปที่หน้า Home แล้วกดลงทะเบียนคอนเสิร์ตก่อนนะ")
+                        Text("ลงทะเบียนคอนเสิร์ตก่อน ตั๋วของคุณจะมาขึ้นที่นี่")
                             .foregroundColor(.secondary)
                     }
                 } else {
                     List {
                         ForEach(myTickets) { item in
-                            // ใช้ HStack เพื่อวาง "แบนเนอร์" + ปุ่มลบด้านขวา
-                            HStack(alignment: .center, spacing: 12) {
+                            // เหลือแค่ NavigationLink อย่างเดียว ไม่มี HStack ซ้อนปุ่มลบแล้ว
+                            NavigationLink {
+                                TicketDetailView(
+                                    concert: item.concert,
+                                    qrString: item.qrString,
+                                    registerDate: item.registerDate
+                                )
+                            } label: {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(item.concert.title)
+                                        .font(.headline)
+                                        .foregroundColor(.primary)
 
-                                // เนื้อหาแบนเนอร์ทั้งก้อน คลิกแล้วไป TicketDetailView
-                                NavigationLink {
-                                    TicketDetailView(
-                                        concert: item.concert,
-                                        qrString: item.qrString,
-                                        registerDate: item.registerDate
-                                    )
-                                } label: {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text(item.concert.title)
-                                            .font(.headline)
-                                            .foregroundColor(.primary)
+                                    Text(item.concert.subtitle)
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                        .lineLimit(1)
 
-                                        Text(item.concert.subtitle)
-                                            .font(.subheadline)
-                                            .foregroundColor(.secondary)
-                                            .lineLimit(1)
-
-                                        HStack(spacing: 12) {
-                                            HStack(spacing: 6) {
-                                                Image(systemName: "calendar")
-                                                    .foregroundColor(.green)
-                                                Text(item.concert.date)
-                                                    .foregroundColor(.green)
-                                                    .font(.subheadline)
-                                            }
-                                            HStack(spacing: 6) {
-                                                Image(systemName: "clock")
-                                                    .foregroundColor(.green)
-                                                Text(item.concert.time)
-                                                    .foregroundColor(.primary)
-                                                    .font(.subheadline)
-                                            }
+                                    HStack(spacing: 12) {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "calendar")
+                                                .foregroundColor(.green)
+                                            Text(item.concert.date)
+                                                .foregroundColor(.green)
+                                                .font(.subheadline)
                                         }
-
-                                        Text("ลงทะเบียนเมื่อ: \(item.registerDate.formatted(date: .abbreviated, time: .shortened))")
-                                            .font(.footnote)
-                                            .foregroundColor(.secondary)
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "clock")
+                                                .foregroundColor(.green)
+                                            Text(item.concert.time)
+                                                .foregroundColor(.primary)
+                                                .font(.subheadline)
+                                        }
                                     }
-                                    .padding(.vertical, 6)
-                                }
 
-                                Spacer(minLength: 8)
-
-                                // ปุ่มลบที่มองเห็นตลอด
-                                Button {
-                                    ticketToDelete = item
-                                    showDeleteConfirm = true
-                                } label: {
-                                    Image(systemName: "trash")
-                                        .foregroundColor(.white)
-                                        .padding(10)
-                                        .background(Circle().fill(Color.red))
+                                    Text("ลงทะเบียนเมื่อ: \(item.registerDate.formatted(date: .abbreviated, time: .shortened))")
+                                        .font(.footnote)
+                                        .foregroundColor(.secondary)
                                 }
-                                .buttonStyle(.plain)
-                                .accessibilityLabel("ลบตั๋ว")
+                                .padding(.vertical, 6)
                             }
                         }
                     }
@@ -143,14 +120,6 @@ struct TicketView: View {
         }
         .onAppear {
             loadMyTickets()
-        }
-        .alert("ลบตั๋วใบนี้?", isPresented: $showDeleteConfirm, presenting: ticketToDelete) { item in
-            Button("ยกเลิก", role: .cancel) { }
-            Button("ลบ", role: .destructive) {
-                deleteTicket(item)
-            }
-        } message: { item in
-            Text(item.concert.title)
         }
     }
 
@@ -170,7 +139,7 @@ struct TicketView: View {
 
         db.collection("tickets")
             .whereField("userEmail", isEqualTo: email)
-            .order(by: "registerDate", descending: true) // ต้องมี composite index
+            .order(by: "registerDate", descending: true)
             .getDocuments { snapshot, error in
                 if let error = error {
                     self.errorMessage = error.localizedDescription
@@ -211,9 +180,8 @@ struct TicketView: View {
                               let detail = cdata["detail"] as? String,
                               let imageURL = cdata["imageURL"] as? String,
                               let mapURL = cdata["mapURL"] as? String,
-                              let maxSeats = cdata["maxSeats"] as? Int 
+                              let maxSeats = cdata["maxSeats"] as? Int
                         else { return }
-
 
                         let concert = Homeview.Concert(
                             id: snap.documentID,
@@ -243,53 +211,6 @@ struct TicketView: View {
                     self.isLoading = false
                 }
             }
-    }
-
-    // ลบตั๋วใน Firestore และอัปเดต concerts.currentRegistered แบบปลอดภัยด้วยธุรกรรม
-    private func deleteTicket(_ item: TicketItem) {
-        let db = Firestore.firestore()
-        let ticketRef = db.collection("tickets").document(item.id)
-        let concertRef = db.collection("concerts").document(item.concert.id)
-
-        db.runTransaction({ (transaction, errorPointer) -> Any? in
-            // 1) อ่าน ticket เพื่อยืนยันว่ามีอยู่
-            let ticketDoc: DocumentSnapshot
-            do {
-                ticketDoc = try transaction.getDocument(ticketRef)
-            } catch let fetchError as NSError {
-                errorPointer?.pointee = fetchError
-                return nil
-            }
-            guard ticketDoc.exists else {
-                // ถ้าไม่มีตั๋วแล้ว ก็ไม่ต้องทำอะไรต่อ
-                return nil
-            }
-
-            // 2) อ่าน concerts.currentRegistered
-            let concertDoc: DocumentSnapshot
-            do {
-                concertDoc = try transaction.getDocument(concertRef)
-            } catch let fetchError as NSError {
-                errorPointer?.pointee = fetchError
-                return nil
-            }
-
-            let current = (concertDoc.data()?["currentRegistered"] as? Int) ?? 0
-            let newValue = max(0, current - 1)
-
-            // 3) อัปเดตตัวนับ และลบตั๋ว
-            transaction.updateData(["currentRegistered": newValue], forDocument: concertRef)
-            transaction.deleteDocument(ticketRef)
-
-            return nil
-        }, completion: { _, error in
-            if let error = error {
-                self.errorMessage = "ลบไม่สำเร็จ: \(error.localizedDescription)"
-                return
-            }
-            // ลบออกจากลิสต์ในแอป
-            self.myTickets.removeAll { $0.id == item.id }
-        })
     }
 }
 
