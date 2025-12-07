@@ -236,29 +236,93 @@ struct ConcertDetailView: View {
 
     private func createTicket(for email: String, uid: String, db: Firestore) {
         let fixedDocId = "\(uid)_\(concert.id)"
-        let docRef = db.collection("tickets").document(fixedDocId)
+        let ticketRef = db.collection("tickets").document(fixedDocId)
+        let concertRef = db.collection("concerts").document(concert.id)
+        let userRef = db.collection("users").document(uid)
 
-        docRef.getDocument { snapshot, error in
-            if let snapshot, snapshot.exists {
-                self.showAlreadyRegisteredAlert = true
-                return
-            }
+        // ดึง username จาก Firestore ก่อน (วิธี B)
+        userRef.getDocument { userSnap, _ in
+            let firestoreUsername = userSnap?.data()?["username"] as? String
+            let authDisplayName = Auth.auth().currentUser?.displayName
+            let username = firestoreUsername?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+                ? firestoreUsername!
+                : (authDisplayName?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+                   ? authDisplayName!
+                   : "Unknown")
 
-            self.ticketDate = Date()
-            self.ticketQR = "ticket:\(fixedDocId)|user:\(email)|concert:\(concert.id)"
+            // ใช้ธุรกรรมเพื่อ:
+            // - อ่าน concerts.currentRegistered, maxSeats
+            // - ตรวจไม่เต็ม
+            // - เพิ่ม currentRegistered
+            // - เขียน ticket พร้อม seatNumber
+            db.runTransaction({ (transaction, errorPointer) -> Any? in
+                // อ่านคอนเสิร์ต
+                let concertDoc: DocumentSnapshot
+                do {
+                    concertDoc = try transaction.getDocument(concertRef)
+                } catch let fetchError as NSError {
+                    errorPointer?.pointee = fetchError
+                    return nil
+                }
 
-            let data: [String: Any] = [
-                "concertId": concert.id,
-                "registerDate": Timestamp(date: self.ticketDate),
-                "userEmail": email,
-                "qrData": self.ticketQR
-            ]
+                guard let concertData = concertDoc.data() else {
+                    errorPointer?.pointee = NSError(domain: "ConcertError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Concert not found"])
+                    return nil
+                }
 
-            docRef.setData(data) { error in
-                if error == nil {
+                let maxSeats = concertData["maxSeats"] as? Int ?? self.concert.maxSeats
+                let currentRegistered = concertData["currentRegistered"] as? Int ?? 0
+
+                // ตรวจว่าเต็มหรือยัง
+                if currentRegistered >= maxSeats {
+                    errorPointer?.pointee = NSError(domain: "ConcertError", code: 2, userInfo: [NSLocalizedDescriptionKey: "Concert is full"])
+                    return nil
+                }
+
+                // ที่นั่งถัดไป
+                let nextSeatNumber = currentRegistered + 1
+                let seatNumber = "\(nextSeatNumber)"
+
+                // อัปเดตตัวนับ
+                transaction.updateData(["currentRegistered": nextSeatNumber], forDocument: concertRef)
+
+                // เตรียมข้อมูลตั๋ว
+                let registerDate = Date()
+                let qr = "user:\(email)|username:\(username)|seat:\(seatNumber)"
+                let ticketData: [String: Any] = [
+                    "concertId": self.concert.id,
+                    "registerDate": Timestamp(date: registerDate),
+                    "userEmail": email,
+                    "username": username,
+                    "seatNumber": seatNumber,
+                    "qrData": qr
+                ]
+
+                // เขียนตั๋ว
+                transaction.setData(ticketData, forDocument: ticketRef)
+
+                // ส่งค่ากลับบางอย่างเพื่อใช้ใน completion (เก็บไว้ใน state)
+                return ["registerDate": registerDate, "qr": qr] as [String: Any]
+            }, completion: { result, error in
+                if let error = error {
+                    // ถ้าเต็มหรือซ้ำจะแจ้งเตือน
+                    self.showAlreadyRegisteredAlert = true
+                    return
+                }
+
+                if let dict = result as? [String: Any],
+                   let date = dict["registerDate"] as? Date,
+                   let qr = dict["qr"] as? String {
+                    self.ticketDate = date
+                    self.ticketQR = qr
+                    self.showSuccessAlert = true
+                } else {
+                    // fallback เผื่อ transaction ไม่ส่งผลลัพธ์
+                    self.ticketDate = Date()
+                    self.ticketQR = "user:\(email)|username:\(username)|seat:A1"
                     self.showSuccessAlert = true
                 }
-            }
+            })
         }
     }
 

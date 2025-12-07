@@ -245,17 +245,51 @@ struct TicketView: View {
             }
     }
 
-    // ลบตั๋วใน Firestore และอัปเดต UI
+    // ลบตั๋วใน Firestore และอัปเดต concerts.currentRegistered แบบปลอดภัยด้วยธุรกรรม
     private func deleteTicket(_ item: TicketItem) {
         let db = Firestore.firestore()
-        db.collection("tickets").document(item.id).delete { error in
+        let ticketRef = db.collection("tickets").document(item.id)
+        let concertRef = db.collection("concerts").document(item.concert.id)
+
+        db.runTransaction({ (transaction, errorPointer) -> Any? in
+            // 1) อ่าน ticket เพื่อยืนยันว่ามีอยู่
+            let ticketDoc: DocumentSnapshot
+            do {
+                ticketDoc = try transaction.getDocument(ticketRef)
+            } catch let fetchError as NSError {
+                errorPointer?.pointee = fetchError
+                return nil
+            }
+            guard ticketDoc.exists else {
+                // ถ้าไม่มีตั๋วแล้ว ก็ไม่ต้องทำอะไรต่อ
+                return nil
+            }
+
+            // 2) อ่าน concerts.currentRegistered
+            let concertDoc: DocumentSnapshot
+            do {
+                concertDoc = try transaction.getDocument(concertRef)
+            } catch let fetchError as NSError {
+                errorPointer?.pointee = fetchError
+                return nil
+            }
+
+            let current = (concertDoc.data()?["currentRegistered"] as? Int) ?? 0
+            let newValue = max(0, current - 1)
+
+            // 3) อัปเดตตัวนับ และลบตั๋ว
+            transaction.updateData(["currentRegistered": newValue], forDocument: concertRef)
+            transaction.deleteDocument(ticketRef)
+
+            return nil
+        }, completion: { _, error in
             if let error = error {
                 self.errorMessage = "ลบไม่สำเร็จ: \(error.localizedDescription)"
                 return
             }
             // ลบออกจากลิสต์ในแอป
             self.myTickets.removeAll { $0.id == item.id }
-        }
+        })
     }
 }
 
