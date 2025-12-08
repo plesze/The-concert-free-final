@@ -110,7 +110,9 @@ struct AdminEditConcertView: View {
         }
 
         isSaving = true
-
+        
+        
+        // dic data to firestore
         var payload: [String: Any] = [
             "title": title,
             "subtitle": subtitle,
@@ -147,38 +149,27 @@ struct AdminEditConcertView: View {
                 dismiss()
             }
         } else {
-            // เพิ่มใหม่
-            db.collection("concerts").addDocument(data: payload) { error in
+            let newDoc = db.collection("concerts").document() // สุ่ม id ใหม่
+            newDoc.setData(payload) { err in
                 isSaving = false
-                if let error = error {
-                    errorMessage = "เพิ่มไม่สำเร็จ: \(error.localizedDescription)"
+                if let err = err {
+                    errorMessage = "เพิ่มไม่สำเร็จ: \(err.localizedDescription)"
                     return
                 }
-                // อ่าน id ล่าสุดกลับมา
-                let newDoc = db.collection("concerts").document()
-                // สร้าง id เองแล้วsetData
-                isSaving = true
-                newDoc.setData(payload) { err in
-                    isSaving = false
-                    if let err = err {
-                        errorMessage = "เพิ่มไม่สำเร็จ: \(err.localizedDescription)"
-                        return
-                    }
-                    let created = Concert(
-                        id: newDoc.documentID,
-                        title: title,
-                        subtitle: subtitle,
-                        date: date,
-                        time: time,
-                        location: location,
-                        imageURL: imageURL,
-                        detail: detail,
-                        mapURL: mapURL,
-                        maxSeats: maxSeats
-                    )
-                    onSaved(created)
-                    dismiss()
-                }
+                let created = Concert(
+                    id: newDoc.documentID,
+                    title: title,
+                    subtitle: subtitle,
+                    date: date,
+                    time: time,
+                    location: location,
+                    imageURL: imageURL,
+                    detail: detail,
+                    mapURL: mapURL,
+                    maxSeats: maxSeats
+                )
+                onSaved(created)
+                dismiss()
             }
         }
     }

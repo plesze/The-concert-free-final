@@ -18,6 +18,9 @@ struct ConcertDetailView: View {
     // แจ้งเตือน “ลงทะเบียนซ้ำ” หรือ “เต็มแล้ว”
     @State private var showAlreadyRegisteredAlert = false
 
+    // แจ้งเตือน URL เปิดไม่ได้
+    @State private var showURLError = false
+
     // จำนวนผู้ลงทะเบียนแบบเรียลไทม์ + ตัวอัปเดตข้อมูลเรียลไทม์
     @State private var registeredCount: Int = 0
     @State private var ticketsListener: ListenerRegistration?
@@ -106,10 +109,16 @@ struct ConcertDetailView: View {
                             Spacer(minLength: 8)
 
                             Button {
-                                if let url = URL(string: concert.mapURL) {
-                                    openURL(url)
-                                } else if let url = mapsURL(for: concert.location) {
-                                    openURL(url)
+                                // เปิดเฉพาะ URL ที่มาจาก concert.mapURL
+                                if let directURL = URL(string: concert.mapURL) {
+                                    openURL(directURL) { success in
+                                        if success == false {
+                                            self.showURLError = true
+                                        }
+                                    }
+                                } else {
+                                    // ถ้า URL ไม่ถูกต้อง
+                                    self.showURLError = true
                                 }
                             } label: {
                                 Label("เปิดแผนที่", systemImage: "arrow.turn.up.right")
@@ -173,6 +182,12 @@ struct ConcertDetailView: View {
                 Button("ตกลง", role: .cancel) { }
             } message: {
                 Text(isFull ? "คอนเสิร์ตนี้เต็มแล้ว" : "คุณลงทะเบียนคอนเสิร์ตนี้ไปแล้ว")
+            }
+
+            .alert("URL Error", isPresented: $showURLError) {
+                Button("ตกลง", role: .cancel) { }
+            } message: {
+                Text("ไม่สามารถเปิดแผนที่ได้ โปรดตรวจสอบ URL")
             }
 
             .navigationDestination(isPresented: $navigateToLogin) {
@@ -250,7 +265,6 @@ struct ConcertDetailView: View {
                    ? authDisplayName!
                    : "Unknown")
 
-            // ใช้ธุรกรรมเพื่อ:
             // - อ่าน concerts.currentRegistered, maxSeats
             // - ตรวจไม่เต็ม
             // - เพิ่ม currentRegistered
@@ -362,11 +376,6 @@ struct ConcertDetailView: View {
         // ถอด “ตัวอัปเดตข้อมูลเรียลไทม์” ของสถานะตั๋วผู้ใช้
         myTicketListener?.remove()
         myTicketListener = nil
-    }
-
-    private func mapsURL(for place: String) -> URL? {
-        let query = place.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        return URL(string: "http://maps.apple.com/?q=\(query)")
     }
 }
 
