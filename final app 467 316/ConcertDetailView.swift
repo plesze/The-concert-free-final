@@ -265,10 +265,7 @@ struct ConcertDetailView: View {
                    ? authDisplayName!
                    : "Unknown")
 
-            // - อ่าน concerts.currentRegistered, maxSeats
-            // - ตรวจไม่เต็ม
-            // - เพิ่ม currentRegistered
-            // - เขียน ticket พร้อม seatNumber
+     
             db.runTransaction({ (transaction, errorPointer) -> Any? in
                 // อ่านคอนเสิร์ต
                 let concertDoc: DocumentSnapshot
