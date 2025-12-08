@@ -33,7 +33,7 @@ struct TicketDetailView: View {
             mapURL: "http://maps.apple.com/?q=Sample%20Arena",
             maxSeats: 1
         ),
-        qrString: String = "user:preview@example.com|username:Cloud|seat:A1",
+        qrString: String = "user:preview@example.com|username:Cloud|seat:A1|type:earlyBird",
         registerDate: Date = Date()
     ) {
         self.concert = concert
@@ -70,6 +70,9 @@ struct TicketDetailView: View {
     // Ticket Card View
     var ticketCardView: some View {
         let info = parseQR(qrString)
+        let type = (info["type"] ?? "regular")
+        let typeText = type == "earlyBird" ? "EARLY BIRD" : "REGULAR"
+        let typeColor: Color = type == "earlyBird" ? .green : .gray
         
         return VStack(alignment: .center, spacing: 10) {
             
@@ -80,6 +83,14 @@ struct TicketDetailView: View {
             Text(concert.location)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+            
+            //แสดง early bird
+            Text(typeText)
+                .font(.caption.weight(.bold))
+                .foregroundColor(type == "earlyBird" ? .white : .secondary)
+                .padding(.vertical, 4)
+                .padding(.horizontal, 8)
+                .background(Capsule().fill(typeColor.opacity(type == "earlyBird" ? 0.9 : 0.2)))
             
             Divider().frame(maxWidth: .infinity)
             

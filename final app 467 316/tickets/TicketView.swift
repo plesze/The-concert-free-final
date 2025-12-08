@@ -162,6 +162,7 @@ struct TicketView: View {
                     let qrData = data["qrData"] as? String ?? ""
                     let registerTS = data["registerDate"] as? Timestamp
                     let registerDate = registerTS?.dateValue() ?? Date()
+                    let ticketType = data["ticketType"] as? String ?? "regular"
 
                     if concertId.isEmpty { continue }
 

@@ -265,7 +265,6 @@ struct ConcertDetailView: View {
                    ? authDisplayName!
                    : "Unknown")
 
-     
             db.runTransaction({ (transaction, errorPointer) -> Any? in
                 // อ่านคอนเสิร์ต
                 let concertDoc: DocumentSnapshot
@@ -294,28 +293,32 @@ struct ConcertDetailView: View {
                 let nextSeatNumber = currentRegistered + 1
                 let seatNumber = "\(nextSeatNumber)"
 
-                // อัปเดตตัวนับ
+                //กำหนด 1-3 เป็น early bird
+                let ticketType = (1...3).contains(nextSeatNumber) ? "earlyBird" : "regular"
+
+                //อัปเดตตัวนับ
                 transaction.updateData(["currentRegistered": nextSeatNumber], forDocument: concertRef)
 
-                // เตรียมข้อมูลตั๋ว
+                //เตรียมข้อมูลตั๋ว
                 let registerDate = Date()
-                let qr = "user:\(email)|username:\(username)|seat:\(seatNumber)"
+                let qr = "user:\(email)|username:\(username)|seat:\(seatNumber)|type:\(ticketType)"
                 let ticketData: [String: Any] = [
                     "concertId": self.concert.id,
                     "registerDate": Timestamp(date: registerDate),
                     "userEmail": email,
                     "username": username,
                     "seatNumber": seatNumber,
-                    "qrData": qr
+                    "qrData": qr,
+                    "ticketType": ticketType
                 ]
 
-                // เขียนตั๋ว
+                //เขียนตั๋ว
                 transaction.setData(ticketData, forDocument: ticketRef)
 
-                // ส่งค่ากลับบางอย่างเพื่อใช้ใน completion (เก็บไว้ใน state)
+                //ส่งค่ากลับบางอย่างเพื่อใช้ใน completion (เก็บไว้ใน state)
                 return ["registerDate": registerDate, "qr": qr] as [String: Any]
             }, completion: { result, error in
-                if let error = error {
+                if let _ = error {
                     // ถ้าเต็มหรือซ้ำจะแจ้งเตือน
                     self.showAlreadyRegisteredAlert = true
                     return
@@ -330,7 +333,7 @@ struct ConcertDetailView: View {
                 } else {
                     // fallback เผื่อ transaction ไม่ส่งผลลัพธ์
                     self.ticketDate = Date()
-                    self.ticketQR = "user:\(email)|username:\(username)|seat:A1"
+                    self.ticketQR = "user:\(email)|username:\(username)|seat:A1|type:regular"
                     self.showSuccessAlert = true
                 }
             })
