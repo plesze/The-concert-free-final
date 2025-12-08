@@ -54,7 +54,7 @@ struct TicketDetailView: View {
                     RoundedRectangle(cornerRadius: 15, style: .continuous)
                         .fill(Color(.secondarySystemBackground))
                         .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
-                        .frame(maxWidth: 380, maxHeight: 500)
+                        .frame(maxWidth: 380, maxHeight: 520)
                     
                     ticketCardView
                         .padding()
@@ -107,7 +107,12 @@ struct TicketDetailView: View {
                     Text("Event Time:")
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Text("\(concert.date) • \(concert.time)")
+                    Text("\(concert.date) •")
+                        .bold()
+                }
+                
+                VStack {
+                    Text("\(concert.time)")
                         .bold()
                 }
                 
