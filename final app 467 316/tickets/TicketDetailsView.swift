@@ -49,16 +49,16 @@ struct TicketDetailView: View {
             VStack(spacing: 16) {
                 Spacer()
                 
-                // Card container
-                ZStack {
-                    RoundedRectangle(cornerRadius: 15, style: .continuous)
-                        .fill(Color(.secondarySystemBackground))
-                        .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
-                        .frame(maxWidth: 380, maxHeight: 520)
-                    
-                    ticketCardView
-                        .padding()
-                }
+                // Card container (กรอบเทาจะปรับสูงตามเนื้อหา)
+                ticketCardView
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 15, style: .continuous)
+                            .fill(Color(.secondarySystemBackground))
+                            .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
+                    )
+                    .frame(maxWidth: 380) // คุมความกว้างได้ แต่ปล่อยความสูงตามเนื้อหา
                 
                 Spacer()
             }
@@ -82,7 +82,7 @@ struct TicketDetailView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             
-            Divider().frame(width: 380)
+            Divider().frame(maxWidth: .infinity)
             
             Image(uiImage: generateQR(from: qrString))
                 .interpolation(.none)
@@ -91,7 +91,9 @@ struct TicketDetailView: View {
                 .frame(width: 200, height: 200)
                 .padding(.vertical, 15)
             
-            Divider().frame(width: 380)
+            Divider().frame(maxWidth: .infinity)
+            
+            Spacer()
             
             VStack(alignment: .trailing, spacing: 12) {
                 
@@ -124,8 +126,9 @@ struct TicketDetailView: View {
                         .bold()
                 }
             }
-            .frame(width: 340, height: 100)
+            .frame(maxWidth: 340) // คุมความกว้าง ไม่ล็อกความสูง
         }
+        .padding()
     }
     
     // Parse QR text
@@ -142,8 +145,6 @@ struct TicketDetailView: View {
         
         return dict
     }
-    
-    
     
     // QR Code Generator
     func generateQR(from string: String, size: CGFloat = 200) -> UIImage {
@@ -171,5 +172,3 @@ struct TicketDetailView: View {
         TicketDetailView()
     }
 }
-
-

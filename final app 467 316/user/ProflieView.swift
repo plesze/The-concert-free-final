@@ -56,6 +56,8 @@ struct ProflieView: View {
 
     @State private var newUsername: String = ""
     @State private var newPassword: String = ""
+    @State private var confirmNewPassword: String = ""
+    @State private var passwordErrorMessage: String?
 
     var body: some View {
         ZStack {
@@ -127,7 +129,6 @@ struct ProflieView: View {
                     }
 
                     Section("Account") {
-                        // ใช้ separator ของระบบให้เส้นเต็ม และจัดปุ่มชิดซ้ายเหมือนแถวปกติ
                         Button("Edit Username") {
                             newUsername = username
                             showEditUsername = true
@@ -136,6 +137,10 @@ struct ProflieView: View {
                         .listRowSeparator(.visible)
 
                         Button("Change Password") {
+                            // reset fields each time opening
+                            newPassword = ""
+                            confirmNewPassword = ""
+                            passwordErrorMessage = nil
                             showChangePassword = true
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -197,10 +202,31 @@ struct ProflieView: View {
         }
         
         .alert("Change Password", isPresented: $showChangePassword) {
-            TextField("New Password", text: $newPassword)
+            SecureField("New Password", text: $newPassword)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+            SecureField("Confirm New Password", text: $confirmNewPassword)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+            if let msg = passwordErrorMessage, !msg.isEmpty {
+                Text(msg).foregroundColor(.red)
+            }
             Button("Save") { changePassword() }
-            Button("Cancel", role: .cancel) {}
+                .disabled(!canSaveNewPassword)
+            Button("Cancel", role: .cancel) {
+                // clear on cancel
+                newPassword = ""
+                confirmNewPassword = ""
+                passwordErrorMessage = nil
+            }
         }
+    }
+    
+    private var canSaveNewPassword: Bool {
+        !newPassword.isEmpty &&
+        !confirmNewPassword.isEmpty &&
+        newPassword == confirmNewPassword &&
+        newPassword.count >= 6
     }
     
     private func fetchProfile() {
@@ -253,15 +279,31 @@ struct ProflieView: View {
     }
 
     private func changePassword() {
-        guard !newPassword.isEmpty else { return }
+        // local validation
+        guard !newPassword.isEmpty, !confirmNewPassword.isEmpty else {
+            passwordErrorMessage = "Please fill in both fields."
+            return
+        }
+        guard newPassword.count >= 6 else {
+            passwordErrorMessage = "Password should be at least 6 characters."
+            return
+        }
+        guard newPassword == confirmNewPassword else {
+            passwordErrorMessage = "Passwords do not match."
+            return
+        }
 
         Auth.auth().currentUser?.updatePassword(to: newPassword) { error in
             if let error = error {
                 print("Password update error: \(error.localizedDescription)")
+                passwordErrorMessage = error.localizedDescription
                 return
             }
+            // success: clear and close
             showChangePassword = false
+            passwordErrorMessage = nil
             newPassword = ""
+            confirmNewPassword = ""
         }
     }
 }
