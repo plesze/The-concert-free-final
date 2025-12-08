@@ -15,7 +15,7 @@ struct ConcertDetailView: View {
     @State private var ticketQR: String = ""
     @State private var ticketDate: Date = Date()
 
-    // แจ้งเตือน “ลงทะเบียนซ้ำ” หรือ “เต็มแล้ว”
+    // แจ้งเตือน ลงทะเบียนซ้ำ” หรือ “เต็มแล้ว”
     @State private var showAlreadyRegisteredAlert = false
 
     // แจ้งเตือน URL เปิดไม่ได้

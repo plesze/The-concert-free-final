@@ -25,10 +25,8 @@ struct SignupPage: View {
 
     var body: some View {
         ZStack {
-            // Background color
             Color(.systemBackground).ignoresSafeArea()
 
-            // Card-like container
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(Color(.secondarySystemBackground))
                 .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
@@ -39,7 +37,6 @@ struct SignupPage: View {
                     .font(.title)
                     .fontWeight(.bold)
                 
-                // Input fields stack (username first)
                 VStack(spacing: 0) {
                     // Username
                     TextField("username", text: $username)
@@ -101,11 +98,8 @@ struct SignupPage: View {
                         .fill(Color(.separator))
                         .frame(width: 300, height: 1)
                     
-                    // Phone number
                     TextField("phone number", text: $phoneNumber)
-                        .keyboardType(.phonePad) // show numeric keypad
-                        // Apply a modifier that filters non-digit characters as user types.
-                        // Note: We use a new iOS 17 two-parameter onChange under the hood to avoid deprecation warnings.
+                        .keyboardType(.phonePad)
                         .modifier(PhoneDigitsFilter(phoneNumber: $phoneNumber))
                         .foregroundColor(.primary)
                         .padding()
@@ -122,7 +116,6 @@ struct SignupPage: View {
                 )
                 
                 VStack(spacing: 15) {
-                    // Sign up button triggers validation + Firebase Auth + Firestore write
                     Button(action: {
                             signUp()
                         }) {
@@ -133,7 +126,6 @@ struct SignupPage: View {
                                 .cornerRadius(15)
                         }
                     
-                    // Show validation or backend errors here
                     if let errorMessage = errorMessage {
                         Text(errorMessage)
                             .foregroundColor(.red)
@@ -141,7 +133,6 @@ struct SignupPage: View {
                             .frame(width: 260)
                     }
                     
-                    // Go back to login
                     Button("Already have an account? Log in") {
                         dismiss()
                     }
@@ -154,7 +145,6 @@ struct SignupPage: View {
 
     // Handles local validation, Firebase Auth account creation, and Firestore profile save.
     private func signUp() {
-        // Basic field presence validation
         guard !email.isEmpty, !password.isEmpty, !confirmPassword.isEmpty, !username.isEmpty, !phoneNumber.isEmpty else {
             errorMessage = "Please fill in all fields."
             return
@@ -179,7 +169,6 @@ struct SignupPage: View {
         // Create user in Firebase Authentication
         Auth.auth().createUser(withEmail: email, password: password) { result, error in
             if let error = error {
-                // Surface Firebase error to user
                 errorMessage = error.localizedDescription
                 return
             }
@@ -188,7 +177,6 @@ struct SignupPage: View {
                 return
             }
 
-            // Save additional profile data in Firestore under /users/{uid}
             let db = Firestore.firestore()
             let data: [String: Any] = [
                 "uid": uid,
@@ -203,7 +191,6 @@ struct SignupPage: View {
                     errorMessage = "Failed to save profile: \(err.localizedDescription)"
                     return
                 }
-                // Success: dismiss back to Login
                 dismiss()
             }
         }
@@ -211,24 +198,18 @@ struct SignupPage: View {
 }
 
 // ViewModifier that filters non-digit characters from phoneNumber as the user types.
-// - On iOS 17+: uses the new two-parameter onChange(of:) { oldValue, newValue in ... } to avoid deprecation.
-// - On iOS 16 and earlier: falls back to the old single-parameter onChange(of:) { newValue in ... }.
 private struct PhoneDigitsFilter: ViewModifier {
     @Binding var phoneNumber: String
 
     func body(content: Content) -> some View {
         if #available(iOS 17.0, *) {
-            // New API (iOS 17+): two-parameter closure (oldValue, newValue)
             content
                 .onChange(of: phoneNumber) { oldValue, newValue in
-                    // Keep only digits
                     phoneNumber = newValue.filter { $0.isNumber }
                 }
         } else {
-            // Old API (iOS 16 and below): single-parameter closure (newValue)
             content
                 .onChange(of: phoneNumber) { newValue in
-                    // Keep only digits
                     phoneNumber = newValue.filter { $0.isNumber }
                 }
         }

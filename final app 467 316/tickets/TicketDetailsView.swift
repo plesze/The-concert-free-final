@@ -49,7 +49,6 @@ struct TicketDetailView: View {
             VStack(spacing: 16) {
                 Spacer()
                 
-                // Card container (กรอบเทาจะปรับสูงตามเนื้อหา)
                 ticketCardView
                     .fixedSize(horizontal: false, vertical: true)
                     .padding()
@@ -58,7 +57,7 @@ struct TicketDetailView: View {
                             .fill(Color(.secondarySystemBackground))
                             .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
                     )
-                    .frame(maxWidth: 380) // คุมความกว้างได้ แต่ปล่อยความสูงตามเนื้อหา
+                    .frame(maxWidth: 380) 
                 
                 Spacer()
             }
@@ -126,7 +125,7 @@ struct TicketDetailView: View {
                         .bold()
                 }
             }
-            .frame(maxWidth: 340) // คุมความกว้าง ไม่ล็อกความสูง
+            .frame(maxWidth: 340)
         }
         .padding()
     }

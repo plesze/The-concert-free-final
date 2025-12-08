@@ -70,7 +70,6 @@ struct TicketView: View {
                 } else {
                     List {
                         ForEach(myTickets) { item in
-                            // เหลือแค่ NavigationLink อย่างเดียว ไม่มี HStack ซ้อนปุ่มลบแล้ว
                             NavigationLink {
                                 TicketDetailView(
                                     concert: item.concert,
@@ -123,7 +122,6 @@ struct TicketView: View {
         }
     }
 
-    // ฟังก์ชันโหลด “ตั๋วของฉันทั้งหมด”
     private func loadMyTickets() {
         isLoading = true
         errorMessage = nil

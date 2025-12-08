@@ -73,10 +73,8 @@ struct Loginpage: View {
     
     var body: some View {
         ZStack {
-            // ใช้สีระบบเพื่อรองรับ Light/Dark อัตโนมัติ
             Color(.systemBackground).ignoresSafeArea()
             
-            // การ์ดใช้พื้นหลังระบบรอง เพื่อคอนทราสต์พอดีทั้งสองโหมด
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(Color(.secondarySystemBackground))
                 .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
@@ -88,7 +86,6 @@ struct Loginpage: View {
                     .fontWeight(.bold)
                     .foregroundColor(.primary)
                 
-                // กล่องชื่อและรหัส "ติดกัน" โดยแยกเป็น VStack ย่อย spacing: 0
                 VStack(spacing: 0) {
                     TextField("email / username", text: $email)
                         .foregroundColor(.primary)
@@ -100,7 +97,6 @@ struct Loginpage: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                     
-                    // เส้นแบ่งบางๆ เพื่อให้ดูติดกันแต่ยังแยกชั้น
                     Rectangle()
                         .fill(Color(.separator))
                         .frame(width: 300, height: 2)
@@ -115,7 +111,7 @@ struct Loginpage: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                 }
-                // หากอยากให้เป็นการ์ดเดียวกันจริงๆ ลองใช้คลิปและสไตล์มุมด้านบน/ล่างต่างกัน:
+                
                 .background(
                     RoundedRectangle(cornerRadius: 15)
                         .fill(Color(.systemBackground))
@@ -131,7 +127,7 @@ struct Loginpage: View {
                             .background(Color.red)
                             .cornerRadius(15)
                     }
-                    .contentShape(Rectangle()) // ทำให้พื้นที่เต็ม frame กดได้
+                    .contentShape(Rectangle())
                     
                     if let errorMessage = viewModel.errorMessage {
                         Text(errorMessage)
@@ -141,27 +137,23 @@ struct Loginpage: View {
                     NavigationLink(destination: SignupPage()) {
                         Text("Don't have an account yet? Sign up")
                             .foregroundColor(.blue)
-                            .padding(.vertical, 5)  // เพิ่มพื้นที่กดรอบข้อความ
+                            .padding(.vertical, 5)
                             .padding(.horizontal, 5)
                     }
                     .buttonStyle(.plain)
-                    .contentShape(Rectangle()) // ทำให้ทั้งพื้นที่เป็นโซนกด
+                    .contentShape(Rectangle())
                 }
             }
-            // ไม่ต้อง ignoresSafeArea แบบทับสีดำทั้งจอแล้ว
             .onReceive(viewModel.$user.compactMap { $0 }) { _ in
-                // เมื่อ login สำเร็จ
-                selectedTab = 0   // เปลี่ยนไปแท็บ Home
-                dismiss()         // ปิดหน้า Login
+                selectedTab = 0
+                dismiss()
             }
         }
     }
 }
     
     #Preview {
-        // ถ้า Preview ไม่ได้อยู่ใน NavigationStack ให้ห่อเพื่อทดสอบ Navigation
         NavigationStack {
-            // Provide a constant binding for preview
             Loginpage(selectedTab: .constant(2))
         }
     }
