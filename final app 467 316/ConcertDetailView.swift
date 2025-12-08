@@ -293,8 +293,8 @@ struct ConcertDetailView: View {
                 let nextSeatNumber = currentRegistered + 1
                 let seatNumber = "\(nextSeatNumber)"
 
-                //กำหนด 1-3 เป็น early bird
-                let ticketType = (1...3).contains(nextSeatNumber) ? "earlyBird" : "regular"
+                //กำหนด 1-2 เป็น early bird
+                let ticketType = (1...2).contains(nextSeatNumber) ? "earlyBird" : "regular"
 
                 //อัปเดตตัวนับ
                 transaction.updateData(["currentRegistered": nextSeatNumber], forDocument: concertRef)
